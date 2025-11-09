@@ -14,12 +14,12 @@ A secure document management system designed for finance companies to store and 
 ### Storage Architecture
 
 1. **User Credentials & Document Metadata**: 
-   - Currently using in-memory storage (data resets on restart)
-   - MongoDB integration ready - just add `MONGODB_URI` environment variable
+   - ✅ MongoDB connected and active
+   - Environment variable `MONGODB_URI` is configured
    
 2. **Document Files**:
    - Currently stored in `uploads/` directory (local file system)
-   - Dropbox integration prepared - awaiting `DROPBOX_ACCESS_TOKEN`
+   - Ready for cloud storage migration (see Cloud Storage Integration below)
 
 ### Demo Access
 
@@ -34,36 +34,61 @@ A secure document management system designed for finance companies to store and 
 ## Features
 
 ### Admin Portal
-- Upload documents for clients by phone number
+- Upload documents for clients by phone number (no pre-registration required)
 - View all documents across all clients
 - Search documents by client phone number
 - Download and delete documents
 - Real-time statistics dashboard
+- Update admin profile (name, phone number, password) in Settings
 
 ### Client Portal
 - View all personal documents
 - Download documents
 - Secure access - clients only see their own documents
 
-## How to Add MongoDB (Required for Production)
+## Cloud Storage Integration
 
-1. Get your MongoDB connection string from MongoDB Atlas or your MongoDB provider
-2. Add it as an environment variable:
+Your documents are currently stored locally in the `uploads/` directory. To integrate with your existing cloud storage where your PDFs are located:
+
+### Option 1: Amazon S3 / S3-Compatible Storage
+1. Install AWS SDK: Add `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner` packages
+2. Add environment variables:
    ```
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
+   AWS_ACCESS_KEY_ID=your_access_key
+   AWS_SECRET_ACCESS_KEY=your_secret_key
+   AWS_REGION=your_region
+   AWS_S3_BUCKET=your_bucket_name
    ```
-3. Restart the application
-4. The system will automatically switch from in-memory to MongoDB storage
+3. Update `server/routes.ts` upload handler to use S3 client instead of local file system
+4. Migrate existing files from `uploads/` to S3
 
-## How to Add Dropbox (Required for Production)
-
-1. Create a Dropbox App at https://www.dropbox.com/developers/apps
-2. Generate an access token
-3. Add it as an environment variable:
+### Option 2: Dropbox
+1. Create Dropbox App at https://www.dropbox.com/developers/apps
+2. Generate access token
+3. Install Dropbox SDK: Add `dropbox` package
+4. Add environment variable:
    ```
    DROPBOX_ACCESS_TOKEN=your_token_here
    ```
-4. Update the document upload logic to use Dropbox SDK (implementation ready)
+5. Update upload logic to use Dropbox SDK
+
+### Option 3: Google Cloud Storage
+1. Create GCS bucket in Google Cloud Console
+2. Install Google Cloud SDK: Add `@google-cloud/storage` package
+3. Set up service account credentials
+4. Add environment variables:
+   ```
+   GCS_BUCKET=your_bucket_name
+   GOOGLE_APPLICATION_CREDENTIALS=path/to/credentials.json
+   ```
+5. Update upload handler to use GCS client
+
+### Migration Strategy
+To migrate your existing PDFs from cloud storage to this system:
+1. Export PDF metadata (filename, client phone number) from your existing system
+2. Use the admin upload API to register each file
+3. Either copy files to new storage or update `dropboxPath` field to reference existing cloud locations
+4. Test access and download functionality
 
 ## API Endpoints
 
@@ -72,10 +97,13 @@ A secure document management system designed for finance companies to store and 
 - `POST /api/auth/login` - Login with phone number and password
 
 ### Documents
-- `POST /api/documents/upload` - Upload document for a client
+- `POST /api/documents/upload` - Upload document for a client (no client pre-registration required)
 - `GET /api/documents` - Get all documents (admin) or client's documents
 - `GET /api/documents/:id/download` - Download a document
 - `DELETE /api/documents/:id` - Delete a document
+
+### Admin
+- `PATCH /api/admin/profile` - Update admin profile (name, phone number, password)
 
 ## Technology Stack
 
@@ -94,20 +122,30 @@ A secure document management system designed for finance companies to store and 
 - File size limits (10MB max)
 - Secure session management
 
+## Recent Updates
+
+### November 2025
+- ✅ Removed client pre-registration requirement for document uploads
+- ✅ Added admin settings page (update name, phone number, password)
+- ✅ MongoDB integration active and working
+- ✅ System now accepts document uploads for any client phone number
+
 ## Next Steps
 
 1. ✅ Frontend design complete
 2. ✅ Backend API routes implemented
-3. ⏳ **Add MongoDB URI** - For persistent data storage
-4. ⏳ **Add Dropbox integration** - For cloud document storage
-5. ⏳ Test end-to-end workflow with real database
+3. ✅ MongoDB connected and active
+4. ⏳ **Migrate to cloud storage** - Move from local uploads/ to S3/Dropbox/GCS
+5. ⏳ **Import existing PDFs** - Bulk upload or reference existing cloud files
 6. ⏳ Deploy to production
 
 ## Development Notes
 
-- All mock data is clearly marked with `// todo: remove mock functionality`
-- System gracefully falls back to in-memory storage when MongoDB is not configured
-- File uploads work locally and are ready to be switched to Dropbox
+- MongoDB is connected and storing user accounts and document metadata
+- Files are currently stored in local `uploads/` directory
+- Client existence check removed - any phone number can receive document uploads
+- Admin can update their profile through Settings page
+- System supports phone number-based authentication with secure password hashing
 - Frontend fully integrated with backend APIs
 
 ## User Workflow
