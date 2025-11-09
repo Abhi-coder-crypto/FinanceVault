@@ -1,6 +1,35 @@
 import { z } from "zod";
 import { parsePhoneNumber, isValidPhoneNumber } from "libphonenumber-js";
 
+// Phone number validation with country support
+export const phoneNumberSchema = z.string()
+  .min(1, "Phone number is required")
+  .refine((phone) => {
+    try {
+      return isValidPhoneNumber(phone);
+    } catch {
+      return false;
+    }
+  }, {
+    message: "Please enter a valid phone number with country code (e.g., +1234567890)"
+  });
+
+// Strong password validation
+export const strongPasswordSchema = z.string()
+  .min(8, "Password must be at least 8 characters long")
+  .refine((password) => /[A-Z]/.test(password), {
+    message: "Password must contain at least one uppercase letter"
+  })
+  .refine((password) => /[a-z]/.test(password), {
+    message: "Password must contain at least one lowercase letter"
+  })
+  .refine((password) => /[0-9]/.test(password), {
+    message: "Password must contain at least one number"
+  })
+  .refine((password) => /[!@#$%^&*(),.?":{}|<>]/.test(password), {
+    message: "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)"
+  });
+
 export const clientSchema = z.object({
   _id: z.string(),
   phoneNumber: z.string(),
@@ -58,35 +87,6 @@ export const uploadDocumentSchema = z.object({
 
 export type Document = z.infer<typeof documentSchema>;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
-
-// Phone number validation with country support
-export const phoneNumberSchema = z.string()
-  .min(1, "Phone number is required")
-  .refine((phone) => {
-    try {
-      return isValidPhoneNumber(phone);
-    } catch {
-      return false;
-    }
-  }, {
-    message: "Please enter a valid phone number with country code (e.g., +1234567890)"
-  });
-
-// Strong password validation
-export const strongPasswordSchema = z.string()
-  .min(8, "Password must be at least 8 characters long")
-  .refine((password) => /[A-Z]/.test(password), {
-    message: "Password must contain at least one uppercase letter"
-  })
-  .refine((password) => /[a-z]/.test(password), {
-    message: "Password must contain at least one lowercase letter"
-  })
-  .refine((password) => /[0-9]/.test(password), {
-    message: "Password must contain at least one number"
-  })
-  .refine((password) => /[!@#$%^&*(),.?":{}|<>]/.test(password), {
-    message: "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)"
-  });
 
 // Login schema (basic validation)
 export const loginSchema = z.object({

@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { uploadMultipleDocuments } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { isValidPhoneNumber } from "libphonenumber-js";
 
 interface FileGroup {
   phoneNumber: string;
@@ -77,6 +78,19 @@ export default function BulkUploadForm({ onComplete }: { onComplete?: () => void
       if (entry && entry.isDirectory) {
         const dirEntry = entry as FileSystemDirectoryEntry;
         const phoneNumber = dirEntry.name;
+        
+        // Validate phone number format
+        let isValid = false;
+        try {
+          isValid = isValidPhoneNumber(phoneNumber);
+        } catch {
+          isValid = false;
+        }
+        
+        if (!isValid) {
+          skippedFolders.push(`${phoneNumber} (invalid phone number)`);
+          continue;
+        }
         
         // Extract all PDF files from the folder
         const files = await extractFilesFromDirectory(dirEntry);

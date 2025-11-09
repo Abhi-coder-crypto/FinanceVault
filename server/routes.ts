@@ -7,7 +7,7 @@ import fs from "fs/promises";
 import { z } from "zod";
 import { sessionMiddleware } from "./session";
 import { requireAuth, requireAdmin } from "./middleware/auth";
-import { loginSchema, registerSchema, updateAdminProfileSchema } from "@shared/schema";
+import { loginSchema, registerSchema, updateAdminProfileSchema, uploadDocumentSchema } from "@shared/schema";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -206,12 +206,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const { clientPhoneNumber } = req.body;
-      
-      if (!clientPhoneNumber) {
+      // Validate phone number
+      const validation = uploadDocumentSchema.safeParse(req.body);
+      if (!validation.success) {
         await fs.unlink(req.file.path);
-        return res.status(400).json({ error: "Client phone number is required" });
+        return res.status(400).json({ 
+          error: validation.error.errors[0]?.message || "Invalid phone number format"
+        });
       }
+
+      const { clientPhoneNumber } = validation.data;
 
       // Create a read stream from the uploaded file
       fileHandle = await fs.open(req.file.path, 'r');
@@ -255,17 +259,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No files uploaded" });
       }
 
-      const { clientPhoneNumber } = req.body;
-      
-      if (!clientPhoneNumber) {
+      // Validate phone number
+      const validation = uploadDocumentSchema.safeParse(req.body);
+      if (!validation.success) {
         // Clean up all uploaded files
         for (const file of req.files) {
           try {
             await fs.unlink(file.path);
           } catch {}
         }
-        return res.status(400).json({ error: "Client phone number is required" });
+        return res.status(400).json({ 
+          error: validation.error.errors[0]?.message || "Invalid phone number format"
+        });
       }
+
+      const { clientPhoneNumber } = validation.data;
 
       const uploadedDocuments = [];
       const errors = [];
