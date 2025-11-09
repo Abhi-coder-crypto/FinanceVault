@@ -176,6 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Document routes - all require authentication
   app.post("/api/documents/upload", requireAdmin, upload.single("file"), async (req, res) => {
+    let fileHandle = null;
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -188,27 +189,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Client phone number is required" });
       }
 
-      // Store file with original name in uploads directory
-      const newPath = path.join("uploads", `${Date.now()}_${req.file.originalname}`);
-      await fs.rename(req.file.path, newPath);
+      // Create a read stream from the uploaded file
+      fileHandle = await fs.open(req.file.path, 'r');
+      const readStream = fileHandle.createReadStream();
 
-      const document = await storage.createDocument({
+      // Upload to GridFS
+      const document = await storage.createDocumentFromStream({
         fileName: req.file.originalname,
         clientPhoneNumber,
         fileSize: req.file.size,
-        dropboxPath: newPath,
+        contentType: req.file.mimetype,
         uploadedBy: req.session.userId!,
-      });
+      }, readStream, req.file.mimetype);
 
       res.json({ document });
     } catch (error) {
       console.error("Upload error:", error);
+      res.status(500).json({ error: "Failed to upload document" });
+    } finally {
+      // Clean up file handle and temporary file
+      if (fileHandle) {
+        try {
+          await fileHandle.close();
+        } catch (closeError) {
+          console.error("Error closing file handle:", closeError);
+        }
+      }
       if (req.file) {
         try {
           await fs.unlink(req.file.path);
-        } catch {}
+        } catch (unlinkError) {
+          console.error("Error deleting temp file:", unlinkError);
+        }
       }
-      res.status(500).json({ error: "Failed to upload document" });
     }
   });
 
@@ -235,33 +248,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const errors = [];
 
       for (const file of req.files) {
-        let newPath = "";
+        let fileHandle = null;
         try {
-          // Store file with original name in uploads directory
-          newPath = path.join("uploads", `${Date.now()}_${file.originalname}`);
-          await fs.rename(file.path, newPath);
+          // Create a read stream from the uploaded file
+          fileHandle = await fs.open(file.path, 'r');
+          const readStream = fileHandle.createReadStream();
 
-          const document = await storage.createDocument({
+          // Upload to GridFS
+          const document = await storage.createDocumentFromStream({
             fileName: file.originalname,
             clientPhoneNumber,
             fileSize: file.size,
-            dropboxPath: newPath,
+            contentType: file.mimetype,
             uploadedBy: req.session.userId!,
-          });
+          }, readStream, file.mimetype);
 
           uploadedDocuments.push(document);
         } catch (error) {
           console.error(`Error uploading ${file.originalname}:`, error);
           errors.push({ fileName: file.originalname, error: "Upload failed" });
-          // Clean up the file (use newPath if rename succeeded, file.path if it didn't)
-          try {
-            if (newPath) {
-              await fs.unlink(newPath);
-            } else {
-              await fs.unlink(file.path);
+        } finally {
+          // Clean up file handle and temporary file
+          if (fileHandle) {
+            try {
+              await fileHandle.close();
+            } catch (closeError) {
+              console.error(`Error closing file handle for ${file.originalname}:`, closeError);
             }
-          } catch (cleanupError) {
-            console.error(`Cleanup failed for ${file.originalname}:`, cleanupError);
+          }
+          try {
+            await fs.unlink(file.path);
+          } catch (unlinkError) {
+            console.error(`Error deleting temp file for ${file.originalname}:`, unlinkError);
           }
         }
       }
@@ -330,10 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Send file for inline display (preview in browser)
-      res.setHeader("Content-Type", "application/pdf");
+      // Stream file from GridFS for inline display (preview in browser)
+      const fileStream = await storage.getDocumentStream(document.gridFsFileId);
+      
+      if (!fileStream) {
+        return res.status(404).json({ error: "File not found in storage" });
+      }
+
+      res.setHeader("Content-Type", document.contentType);
       res.setHeader("Content-Disposition", `inline; filename="${document.fileName}"`);
-      res.sendFile(path.resolve(document.dropboxPath));
+      fileStream.pipe(res);
     } catch (error) {
       console.error("Preview error:", error);
       res.status(500).json({ error: "Failed to preview document" });
@@ -357,8 +381,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Send the file as download (saves to computer)
-      res.download(document.dropboxPath, document.fileName);
+      // Stream file from GridFS as download (saves to computer)
+      const fileStream = await storage.getDocumentStream(document.gridFsFileId);
+      
+      if (!fileStream) {
+        return res.status(404).json({ error: "File not found in storage" });
+      }
+
+      res.setHeader("Content-Type", document.contentType);
+      res.setHeader("Content-Disposition", `attachment; filename="${document.fileName}"`);
+      fileStream.pipe(res);
     } catch (error) {
       console.error("Download error:", error);
       res.status(500).json({ error: "Failed to download document" });
@@ -374,14 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Document not found" });
       }
 
-      // Delete file from disk
-      try {
-        await fs.unlink(document.dropboxPath);
-      } catch (error) {
-        console.error("File deletion error:", error);
-      }
-
-      // Delete from database
+      // Delete from database and GridFS (handled by storage layer)
       const success = await storage.deleteDocument(id);
 
       if (success) {

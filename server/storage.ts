@@ -1,7 +1,8 @@
 import { type User, type InsertUser, type Document, type InsertDocument, type UpdateAdminProfile } from "@shared/schema";
 import { getDatabase } from "./db";
 import bcrypt from "bcryptjs";
-import { ObjectId } from "mongodb";
+import { ObjectId, GridFSBucket } from "mongodb";
+import type { Readable } from "stream";
 
 export type UserWithoutPassword = Omit<User, 'password'>;
 
@@ -19,6 +20,8 @@ export interface IStorage {
   getDocumentsByClient(phoneNumber: string): Promise<Document[]>;
   getAllDocuments(): Promise<Document[]>;
   createDocument(doc: InsertDocument): Promise<Document>;
+  createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string): Promise<Document>;
+  getDocumentStream(gridFsFileId: string): Promise<Readable | null>;
   deleteDocument(id: string): Promise<boolean>;
 }
 
@@ -100,11 +103,46 @@ class MemStorage implements IStorage {
       clientPhoneNumber: insertDoc.clientPhoneNumber,
       uploadDate: new Date().toISOString(),
       fileSize: insertDoc.fileSize,
-      dropboxPath: insertDoc.dropboxPath,
+      gridFsFileId: insertDoc.gridFsFileId,
+      contentType: insertDoc.contentType || "application/pdf",
       uploadedBy: insertDoc.uploadedBy,
     };
     this.documents.set(doc._id, doc);
     return doc;
+  }
+
+  async createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string): Promise<Document> {
+    // For MemStorage, store file path as gridFsFileId for later streaming
+    // This maintains compatibility with the old filesystem approach
+    const filePath = `uploads/mem_${Date.now()}_${doc.fileName}`;
+    const gridFsFileId = filePath;
+    
+    // Write the stream to the file
+    const fs = await import('fs/promises');
+    const writeStream = (await import('fs')).createWriteStream(filePath);
+    
+    return new Promise((resolve, reject) => {
+      fileStream.pipe(writeStream)
+        .on('error', reject)
+        .on('finish', async () => {
+          try {
+            resolve(await this.createDocument({ ...doc, gridFsFileId, contentType }));
+          } catch (error) {
+            reject(error);
+          }
+        });
+    });
+  }
+
+  async getDocumentStream(gridFsFileId: string): Promise<Readable | null> {
+    // For MemStorage, gridFsFileId is the file path
+    try {
+      const fs = await import('fs');
+      return fs.createReadStream(gridFsFileId);
+    } catch (error) {
+      console.error("Error creating read stream:", error);
+      return null;
+    }
   }
 
   async deleteDocument(id: string): Promise<boolean> {
@@ -280,7 +318,8 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: doc.clientPhoneNumber,
       uploadDate: doc.uploadDate,
       fileSize: doc.fileSize,
-      dropboxPath: doc.dropboxPath,
+      gridFsFileId: doc.gridFsFileId,
+      contentType: doc.contentType || "application/pdf",
       uploadedBy: doc.uploadedBy,
     };
   }
@@ -300,7 +339,8 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: doc.clientPhoneNumber,
       uploadDate: doc.uploadDate,
       fileSize: doc.fileSize,
-      dropboxPath: doc.dropboxPath,
+      gridFsFileId: doc.gridFsFileId,
+      contentType: doc.contentType || "application/pdf",
       uploadedBy: doc.uploadedBy,
     }));
   }
@@ -320,7 +360,8 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: doc.clientPhoneNumber,
       uploadDate: doc.uploadDate,
       fileSize: doc.fileSize,
-      dropboxPath: doc.dropboxPath,
+      gridFsFileId: doc.gridFsFileId,
+      contentType: doc.contentType || "application/pdf",
       uploadedBy: doc.uploadedBy,
     }));
   }
@@ -334,7 +375,8 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: insertDoc.clientPhoneNumber,
       uploadDate: new Date().toISOString(),
       fileSize: insertDoc.fileSize,
-      dropboxPath: insertDoc.dropboxPath,
+      gridFsFileId: insertDoc.gridFsFileId,
+      contentType: insertDoc.contentType || "application/pdf",
       uploadedBy: insertDoc.uploadedBy,
     });
 
@@ -344,15 +386,105 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: insertDoc.clientPhoneNumber,
       uploadDate: new Date().toISOString(),
       fileSize: insertDoc.fileSize,
-      dropboxPath: insertDoc.dropboxPath,
+      gridFsFileId: insertDoc.gridFsFileId,
+      contentType: insertDoc.contentType || "application/pdf",
       uploadedBy: insertDoc.uploadedBy,
     };
+  }
+
+  async createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string): Promise<Document> {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database not available");
+    
+    // Create GridFS bucket
+    const bucket = new GridFSBucket(db, { bucketName: 'documents' });
+    
+    // Upload file to GridFS
+    return new Promise((resolve, reject) => {
+      const uploadStream = bucket.openUploadStream(doc.fileName, {
+        metadata: {
+          contentType,
+          clientPhoneNumber: doc.clientPhoneNumber,
+          uploadedBy: doc.uploadedBy,
+        },
+      });
+
+      fileStream.pipe(uploadStream);
+      
+      uploadStream
+        .on('error', (error) => {
+          reject(error);
+        })
+        .on('finish', async () => {
+          const gridFsFileId = uploadStream.id.toString();
+          try {
+            // Create document metadata in documents collection
+            const result = await db.collection('documents').insertOne({
+              fileName: doc.fileName,
+              clientPhoneNumber: doc.clientPhoneNumber,
+              uploadDate: new Date().toISOString(),
+              fileSize: doc.fileSize,
+              gridFsFileId,
+              contentType,
+              uploadedBy: doc.uploadedBy,
+            });
+
+            resolve({
+              _id: result.insertedId.toString(),
+              fileName: doc.fileName,
+              clientPhoneNumber: doc.clientPhoneNumber,
+              uploadDate: new Date().toISOString(),
+              fileSize: doc.fileSize,
+              gridFsFileId,
+              contentType,
+              uploadedBy: doc.uploadedBy,
+            });
+          } catch (error) {
+            // Clean up orphaned GridFS file if metadata insert fails
+            // Upload completed (we're in uploadStream's finish event), so file exists
+            try {
+              await bucket.delete(new ObjectId(gridFsFileId));
+              console.log(`Cleaned up orphaned GridFS file: ${gridFsFileId}`);
+            } catch (cleanupError) {
+              // Log but don't fail the rejection - the metadata insert already failed
+              console.error(`Failed to cleanup GridFS file ${gridFsFileId}:`, cleanupError);
+            }
+            reject(error);
+          }
+        });
+    });
+  }
+
+  async getDocumentStream(gridFsFileId: string): Promise<Readable | null> {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database not available");
+    
+    try {
+      const bucket = new GridFSBucket(db, { bucketName: 'documents' });
+      return bucket.openDownloadStream(new ObjectId(gridFsFileId));
+    } catch (error) {
+      console.error("Error opening download stream:", error);
+      return null;
+    }
   }
 
   async deleteDocument(id: string): Promise<boolean> {
     const db = await getDatabase();
     if (!db) throw new Error("Database not available");
     
+    // First, get the document to find the GridFS file ID
+    const doc = await this.getDocument(id);
+    if (!doc) return false;
+    
+    // Delete from GridFS
+    try {
+      const bucket = new GridFSBucket(db, { bucketName: 'documents' });
+      await bucket.delete(new ObjectId(doc.gridFsFileId));
+    } catch (error) {
+      console.error("Error deleting from GridFS:", error);
+    }
+    
+    // Delete metadata from documents collection
     const result = await db.collection('documents').deleteOne({ _id: new ObjectId(id) });
     return result.deletedCount === 1;
   }
@@ -409,6 +541,12 @@ export const storage = {
   },
   async createDocument(doc: InsertDocument) {
     return (await getStorage()).createDocument(doc);
+  },
+  async createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string) {
+    return (await getStorage()).createDocumentFromStream(doc, fileStream, contentType);
+  },
+  async getDocumentStream(gridFsFileId: string) {
+    return (await getStorage()).getDocumentStream(gridFsFileId);
   },
   async deleteDocument(id: string) {
     return (await getStorage()).deleteDocument(id);

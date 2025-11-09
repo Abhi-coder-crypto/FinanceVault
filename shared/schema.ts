@@ -44,7 +44,8 @@ export const documentSchema = z.object({
   clientPhoneNumber: z.string(),
   uploadDate: z.string(),
   fileSize: z.number(),
-  dropboxPath: z.string(),
+  gridFsFileId: z.string(),
+  contentType: z.string().default("application/pdf"),
   uploadedBy: z.string(),
 });
 
