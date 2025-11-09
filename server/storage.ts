@@ -1,10 +1,32 @@
 import { type User, type InsertUser, type Document, type InsertDocument, type UpdateAdminProfile } from "@shared/schema";
 import { getDatabase } from "./db";
 import bcrypt from "bcryptjs";
-import { ObjectId, GridFSBucket } from "mongodb";
+import { ObjectId } from "mongodb";
 import type { Readable } from "stream";
+import fs from "fs/promises";
+import fsSync from "fs";
+import path from "path";
 
 export type UserWithoutPassword = Omit<User, 'password'>;
+
+function getStorageRoot(): string {
+  return process.env.STORAGE_ROOT || path.resolve(process.cwd(), 'storage');
+}
+
+function sanitizePhoneNumber(phoneNumber: string): string {
+  return phoneNumber.replace(/[^0-9+]/g, '');
+}
+
+function sanitizeFileName(fileName: string): string {
+  return fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+function isSecurePath(filePath: string): boolean {
+  const storageRoot = getStorageRoot();
+  const normalizedPath = path.normalize(filePath);
+  const resolvedPath = path.resolve(normalizedPath);
+  return resolvedPath.startsWith(path.resolve(storageRoot));
+}
 
 export interface IStorage {
   // User operations
@@ -20,8 +42,8 @@ export interface IStorage {
   getDocumentsByClient(phoneNumber: string): Promise<Document[]>;
   getAllDocuments(): Promise<Document[]>;
   createDocument(doc: InsertDocument): Promise<Document>;
-  createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string): Promise<Document>;
-  getDocumentStream(gridFsFileId: string): Promise<Readable | null>;
+  createDocumentFromStream(doc: Omit<InsertDocument, 'filePath' | 'contentType'>, fileStream: Readable, contentType: string): Promise<Document>;
+  getDocumentStream(filePath: string): Promise<Readable | null>;
   deleteDocument(id: string): Promise<boolean>;
 }
 
@@ -103,7 +125,7 @@ class MemStorage implements IStorage {
       clientPhoneNumber: insertDoc.clientPhoneNumber,
       uploadDate: new Date().toISOString(),
       fileSize: insertDoc.fileSize,
-      gridFsFileId: insertDoc.gridFsFileId,
+      filePath: insertDoc.filePath,
       contentType: insertDoc.contentType || "application/pdf",
       uploadedBy: insertDoc.uploadedBy,
     };
@@ -111,22 +133,26 @@ class MemStorage implements IStorage {
     return doc;
   }
 
-  async createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string): Promise<Document> {
-    // For MemStorage, store file path as gridFsFileId for later streaming
-    // This maintains compatibility with the old filesystem approach
-    const filePath = `uploads/mem_${Date.now()}_${doc.fileName}`;
-    const gridFsFileId = filePath;
+  async createDocumentFromStream(doc: Omit<InsertDocument, 'filePath' | 'contentType'>, fileStream: Readable, contentType: string): Promise<Document> {
+    const storageRoot = getStorageRoot();
+    const sanitizedPhone = sanitizePhoneNumber(doc.clientPhoneNumber);
+    const sanitizedFileName = sanitizeFileName(doc.fileName);
+    const timestamp = Date.now();
+    const uniqueFileName = `${timestamp}_${sanitizedFileName}`;
+    const clientDir = path.join(storageRoot, 'clients', sanitizedPhone);
+    const absolutePath = path.join(clientDir, uniqueFileName);
+    const relativePath = path.join('clients', sanitizedPhone, uniqueFileName);
     
-    // Write the stream to the file
-    const fs = await import('fs/promises');
-    const writeStream = (await import('fs')).createWriteStream(filePath);
+    await fs.mkdir(clientDir, { recursive: true, mode: 0o750 });
+    
+    const writeStream = fsSync.createWriteStream(absolutePath);
     
     return new Promise((resolve, reject) => {
       fileStream.pipe(writeStream)
         .on('error', reject)
         .on('finish', async () => {
           try {
-            resolve(await this.createDocument({ ...doc, gridFsFileId, contentType }));
+            resolve(await this.createDocument({ ...doc, filePath: relativePath, contentType }));
           } catch (error) {
             reject(error);
           }
@@ -134,11 +160,16 @@ class MemStorage implements IStorage {
     });
   }
 
-  async getDocumentStream(gridFsFileId: string): Promise<Readable | null> {
-    // For MemStorage, gridFsFileId is the file path
+  async getDocumentStream(relativePath: string): Promise<Readable | null> {
     try {
-      const fs = await import('fs');
-      return fs.createReadStream(gridFsFileId);
+      const storageRoot = getStorageRoot();
+      const absolutePath = path.join(storageRoot, relativePath);
+      
+      if (!isSecurePath(absolutePath)) {
+        console.error("Security: Attempted path traversal:", absolutePath);
+        return null;
+      }
+      return fsSync.createReadStream(absolutePath);
     } catch (error) {
       console.error("Error creating read stream:", error);
       return null;
@@ -146,6 +177,17 @@ class MemStorage implements IStorage {
   }
 
   async deleteDocument(id: string): Promise<boolean> {
+    const doc = this.documents.get(id);
+    if (!doc) return false;
+    
+    try {
+      const storageRoot = getStorageRoot();
+      const absolutePath = path.join(storageRoot, doc.filePath);
+      await fs.unlink(absolutePath);
+    } catch (error) {
+      console.error("Error deleting file:", error);
+    }
+    
     return this.documents.delete(id);
   }
 }
@@ -318,7 +360,7 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: doc.clientPhoneNumber,
       uploadDate: doc.uploadDate,
       fileSize: doc.fileSize,
-      gridFsFileId: doc.gridFsFileId,
+      filePath: doc.filePath,
       contentType: doc.contentType || "application/pdf",
       uploadedBy: doc.uploadedBy,
     };
@@ -339,7 +381,7 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: doc.clientPhoneNumber,
       uploadDate: doc.uploadDate,
       fileSize: doc.fileSize,
-      gridFsFileId: doc.gridFsFileId,
+      filePath: doc.filePath,
       contentType: doc.contentType || "application/pdf",
       uploadedBy: doc.uploadedBy,
     }));
@@ -360,7 +402,7 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: doc.clientPhoneNumber,
       uploadDate: doc.uploadDate,
       fileSize: doc.fileSize,
-      gridFsFileId: doc.gridFsFileId,
+      filePath: doc.filePath,
       contentType: doc.contentType || "application/pdf",
       uploadedBy: doc.uploadedBy,
     }));
@@ -375,7 +417,7 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: insertDoc.clientPhoneNumber,
       uploadDate: new Date().toISOString(),
       fileSize: insertDoc.fileSize,
-      gridFsFileId: insertDoc.gridFsFileId,
+      filePath: insertDoc.filePath,
       contentType: insertDoc.contentType || "application/pdf",
       uploadedBy: insertDoc.uploadedBy,
     });
@@ -386,45 +428,45 @@ class MongoStorage implements IStorage {
       clientPhoneNumber: insertDoc.clientPhoneNumber,
       uploadDate: new Date().toISOString(),
       fileSize: insertDoc.fileSize,
-      gridFsFileId: insertDoc.gridFsFileId,
+      filePath: insertDoc.filePath,
       contentType: insertDoc.contentType || "application/pdf",
       uploadedBy: insertDoc.uploadedBy,
     };
   }
 
-  async createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string): Promise<Document> {
+  async createDocumentFromStream(doc: Omit<InsertDocument, 'filePath' | 'contentType'>, fileStream: Readable, contentType: string): Promise<Document> {
     const db = await getDatabase();
     if (!db) throw new Error("Database not available");
     
-    // Create GridFS bucket
-    const bucket = new GridFSBucket(db, { bucketName: 'documents' });
+    const storageRoot = getStorageRoot();
+    const sanitizedPhone = sanitizePhoneNumber(doc.clientPhoneNumber);
+    const sanitizedFileName = sanitizeFileName(doc.fileName);
+    const timestamp = Date.now();
+    const uniqueFileName = `${timestamp}_${sanitizedFileName}`;
+    const clientDir = path.join(storageRoot, 'clients', sanitizedPhone);
+    const absolutePath = path.join(clientDir, uniqueFileName);
+    const relativePath = path.join('clients', sanitizedPhone, uniqueFileName);
     
-    // Upload file to GridFS
+    await fs.mkdir(clientDir, { recursive: true, mode: 0o750 });
+    
+    const writeStream = fsSync.createWriteStream(absolutePath);
+    
     return new Promise((resolve, reject) => {
-      const uploadStream = bucket.openUploadStream(doc.fileName, {
-        metadata: {
-          contentType,
-          clientPhoneNumber: doc.clientPhoneNumber,
-          uploadedBy: doc.uploadedBy,
-        },
-      });
-
-      fileStream.pipe(uploadStream);
-      
-      uploadStream
-        .on('error', (error) => {
+      fileStream.pipe(writeStream)
+        .on('error', async (error) => {
+          try {
+            await fs.unlink(absolutePath);
+          } catch {}
           reject(error);
         })
         .on('finish', async () => {
-          const gridFsFileId = uploadStream.id.toString();
           try {
-            // Create document metadata in documents collection
             const result = await db.collection('documents').insertOne({
               fileName: doc.fileName,
               clientPhoneNumber: doc.clientPhoneNumber,
               uploadDate: new Date().toISOString(),
               fileSize: doc.fileSize,
-              gridFsFileId,
+              filePath: relativePath,
               contentType,
               uploadedBy: doc.uploadedBy,
             });
@@ -435,19 +477,16 @@ class MongoStorage implements IStorage {
               clientPhoneNumber: doc.clientPhoneNumber,
               uploadDate: new Date().toISOString(),
               fileSize: doc.fileSize,
-              gridFsFileId,
+              filePath: relativePath,
               contentType,
               uploadedBy: doc.uploadedBy,
             });
           } catch (error) {
-            // Clean up orphaned GridFS file if metadata insert fails
-            // Upload completed (we're in uploadStream's finish event), so file exists
             try {
-              await bucket.delete(new ObjectId(gridFsFileId));
-              console.log(`Cleaned up orphaned GridFS file: ${gridFsFileId}`);
+              await fs.unlink(absolutePath);
+              console.log(`Cleaned up orphaned file: ${absolutePath}`);
             } catch (cleanupError) {
-              // Log but don't fail the rejection - the metadata insert already failed
-              console.error(`Failed to cleanup GridFS file ${gridFsFileId}:`, cleanupError);
+              console.error(`Failed to cleanup file ${absolutePath}:`, cleanupError);
             }
             reject(error);
           }
@@ -455,13 +494,16 @@ class MongoStorage implements IStorage {
     });
   }
 
-  async getDocumentStream(gridFsFileId: string): Promise<Readable | null> {
-    const db = await getDatabase();
-    if (!db) throw new Error("Database not available");
-    
+  async getDocumentStream(relativePath: string): Promise<Readable | null> {
     try {
-      const bucket = new GridFSBucket(db, { bucketName: 'documents' });
-      return bucket.openDownloadStream(new ObjectId(gridFsFileId));
+      const storageRoot = getStorageRoot();
+      const absolutePath = path.join(storageRoot, relativePath);
+      
+      if (!isSecurePath(absolutePath)) {
+        console.error("Security: Attempted path traversal:", absolutePath);
+        return null;
+      }
+      return fsSync.createReadStream(absolutePath);
     } catch (error) {
       console.error("Error opening download stream:", error);
       return null;
@@ -472,19 +514,17 @@ class MongoStorage implements IStorage {
     const db = await getDatabase();
     if (!db) throw new Error("Database not available");
     
-    // First, get the document to find the GridFS file ID
     const doc = await this.getDocument(id);
     if (!doc) return false;
     
-    // Delete from GridFS
     try {
-      const bucket = new GridFSBucket(db, { bucketName: 'documents' });
-      await bucket.delete(new ObjectId(doc.gridFsFileId));
+      const storageRoot = getStorageRoot();
+      const absolutePath = path.join(storageRoot, doc.filePath);
+      await fs.unlink(absolutePath);
     } catch (error) {
-      console.error("Error deleting from GridFS:", error);
+      console.error("Error deleting file from filesystem:", error);
     }
     
-    // Delete metadata from documents collection
     const result = await db.collection('documents').deleteOne({ _id: new ObjectId(id) });
     return result.deletedCount === 1;
   }

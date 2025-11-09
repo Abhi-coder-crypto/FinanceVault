@@ -193,12 +193,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       fileHandle = await fs.open(req.file.path, 'r');
       const readStream = fileHandle.createReadStream();
 
-      // Upload to GridFS
+      // Upload to filesystem storage
       const document = await storage.createDocumentFromStream({
         fileName: req.file.originalname,
         clientPhoneNumber,
         fileSize: req.file.size,
-        contentType: req.file.mimetype,
         uploadedBy: req.session.userId!,
       }, readStream, req.file.mimetype);
 
@@ -254,12 +253,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           fileHandle = await fs.open(file.path, 'r');
           const readStream = fileHandle.createReadStream();
 
-          // Upload to GridFS
+          // Upload to filesystem storage
           const document = await storage.createDocumentFromStream({
             fileName: file.originalname,
             clientPhoneNumber,
             fileSize: file.size,
-            contentType: file.mimetype,
             uploadedBy: req.session.userId!,
           }, readStream, file.mimetype);
 
@@ -348,8 +346,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Stream file from GridFS for inline display (preview in browser)
-      const fileStream = await storage.getDocumentStream(document.gridFsFileId);
+      // Stream file from filesystem for inline display (preview in browser)
+      const fileStream = await storage.getDocumentStream(document.filePath);
       
       if (!fileStream) {
         return res.status(404).json({ error: "File not found in storage" });
@@ -381,8 +379,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Stream file from GridFS as download (saves to computer)
-      const fileStream = await storage.getDocumentStream(document.gridFsFileId);
+      // Stream file from filesystem as download (saves to computer)
+      const fileStream = await storage.getDocumentStream(document.filePath);
       
       if (!fileStream) {
         return res.status(404).json({ error: "File not found in storage" });
@@ -406,7 +404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Document not found" });
       }
 
-      // Delete from database and GridFS (handled by storage layer)
+      // Delete from database and filesystem (handled by storage layer)
       const success = await storage.deleteDocument(id);
 
       if (success) {

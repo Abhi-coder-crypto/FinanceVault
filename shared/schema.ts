@@ -44,7 +44,7 @@ export const documentSchema = z.object({
   clientPhoneNumber: z.string(),
   uploadDate: z.string(),
   fileSize: z.number(),
-  gridFsFileId: z.string(),
+  filePath: z.string(),
   contentType: z.string().default("application/pdf"),
   uploadedBy: z.string(),
 });
