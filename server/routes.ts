@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import { z } from "zod";
 import { sessionMiddleware } from "./session";
 import { requireAuth, requireAdmin } from "./middleware/auth";
+import { loginSchema, registerSchema } from "@shared/schema";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -19,18 +20,6 @@ const upload = multer({
       cb(new Error("Only PDF files are allowed"));
     }
   },
-});
-
-// Validation schemas
-const loginSchema = z.object({
-  phoneNumber: z.string().min(1),
-  password: z.string().min(1),
-});
-
-const registerSchema = z.object({
-  phoneNumber: z.string().min(1),
-  password: z.string().min(6),
-  name: z.string().optional(),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
