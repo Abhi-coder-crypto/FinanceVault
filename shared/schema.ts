@@ -41,7 +41,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export const documentSchema = z.object({
   _id: z.string(),
   fileName: z.string(),
-  clientPhoneNumber: z.string(),
+  clientPhoneNumber: phoneNumberSchema,
   uploadDate: z.string(),
   fileSize: z.number(),
   filePath: z.string(),
@@ -50,6 +50,11 @@ export const documentSchema = z.object({
 });
 
 export const insertDocumentSchema = documentSchema.omit({ _id: true, uploadDate: true });
+
+// Upload validation schema
+export const uploadDocumentSchema = z.object({
+  clientPhoneNumber: phoneNumberSchema,
+});
 
 export type Document = z.infer<typeof documentSchema>;
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
