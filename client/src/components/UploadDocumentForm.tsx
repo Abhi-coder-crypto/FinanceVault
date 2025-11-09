@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,11 +7,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface UploadDocumentFormProps {
   onUpload: (phoneNumber: string, file: File) => void;
+  initialPhoneNumber?: string;
 }
 
-export default function UploadDocumentForm({ onUpload }: UploadDocumentFormProps) {
-  const [phoneNumber, setPhoneNumber] = useState("");
+export default function UploadDocumentForm({ onUpload, initialPhoneNumber }: UploadDocumentFormProps) {
+  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (initialPhoneNumber) {
+      setPhoneNumber(initialPhoneNumber);
+    }
+  }, [initialPhoneNumber]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

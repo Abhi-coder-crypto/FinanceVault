@@ -48,6 +48,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [clients, setClients] = useState<ClientWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(user);
+  const [selectedPhoneNumber, setSelectedPhoneNumber] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -134,6 +135,18 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
     }
   };
 
+  const handleClientClick = (phoneNumber: string) => {
+    setSelectedPhoneNumber(phoneNumber);
+    setActiveView("upload");
+  };
+
+  const handleMenuClick = (viewId: string) => {
+    if (viewId === "upload") {
+      setSelectedPhoneNumber(undefined);
+    }
+    setActiveView(viewId);
+  };
+
   const sidebarStyle = {
     "--sidebar-width": "16rem",
   };
@@ -166,7 +179,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
-                        onClick={() => setActiveView(item.id)}
+                        onClick={() => handleMenuClick(item.id)}
                         isActive={activeView === item.id}
                         data-testid={`button-nav-${item.id}`}
                       >
@@ -289,7 +302,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                   </p>
                 </div>
                 <div className="max-w-2xl">
-                  <UploadDocumentForm onUpload={handleUpload} />
+                  <UploadDocumentForm onUpload={handleUpload} initialPhoneNumber={selectedPhoneNumber} />
                 </div>
               </div>
             )}
@@ -302,7 +315,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                     View and manage all client accounts
                   </p>
                 </div>
-                <AllClients />
+                <AllClients onClientClick={handleClientClick} />
               </div>
             )}
 

@@ -5,7 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { getAllClients, type ClientWithCount } from "@/lib/api";
 
-export default function AllClients() {
+interface AllClientsProps {
+  onClientClick?: (phoneNumber: string) => void;
+}
+
+export default function AllClients({ onClientClick }: AllClientsProps) {
   const [clients, setClients] = useState<ClientWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -60,7 +64,12 @@ export default function AllClients() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {clients.map((client) => {
           return (
-            <Card key={client._id} className="hover-elevate" data-testid={`card-client-${client.phoneNumber}`}>
+            <Card 
+              key={client._id} 
+              className="hover-elevate cursor-pointer transition-all" 
+              onClick={() => onClientClick?.(client.phoneNumber)}
+              data-testid={`card-client-${client.phoneNumber}`}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start gap-3">
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
