@@ -7,7 +7,7 @@ import fs from "fs/promises";
 import { z } from "zod";
 import { sessionMiddleware } from "./session";
 import { requireAuth, requireAdmin } from "./middleware/auth";
-import { loginSchema, registerSchema, updateAdminProfileSchema, uploadDocumentSchema } from "@shared/schema";
+import { loginSchema, registerSchema, updateAdminProfileSchema, uploadDocumentSchema, phoneNumberSchema } from "@shared/schema";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -159,6 +159,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get clients error:", error);
       res.status(500).json({ error: "Failed to fetch clients" });
+    }
+  });
+
+  // Cleanup invalid phone numbers (admin only)
+  app.delete("/api/clients/cleanup-invalid", requireAdmin, async (req, res) => {
+    try {
+      const { phoneNumber } = req.body;
+      
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+      
+      // Check if it's a valid phone number
+      let isValid = false;
+      try {
+        isValid = phoneNumberSchema.parse(phoneNumber) !== undefined;
+      } catch {
+        isValid = false;
+      }
+      
+      if (isValid) {
+        return res.status(400).json({ error: "Cannot delete valid phone number data" });
+      }
+      
+      // Get all documents for this phone number
+      const documents = await storage.getDocumentsByClient(phoneNumber);
+      
+      // Delete all documents
+      let deletedCount = 0;
+      for (const doc of documents) {
+        const success = await storage.deleteDocument(doc._id);
+        if (success) deletedCount++;
+      }
+      
+      res.json({ 
+        success: true, 
+        deletedDocuments: deletedCount,
+        phoneNumber 
+      });
+    } catch (error) {
+      console.error("Cleanup error:", error);
+      res.status(500).json({ error: "Failed to cleanup invalid data" });
     }
   });
 

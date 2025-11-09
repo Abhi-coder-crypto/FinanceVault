@@ -137,6 +137,22 @@ export async function deleteDocument(id: string): Promise<void> {
   }
 }
 
+export async function cleanupInvalidClient(phoneNumber: string): Promise<{ success: boolean; deletedDocuments: number }> {
+  const response = await fetch(`${API_BASE}/clients/cleanup-invalid`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ phoneNumber }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Cleanup failed");
+  }
+
+  return await response.json();
+}
+
 export async function updateAdminProfile(data: { name?: string; phoneNumber?: string; password?: string }): Promise<User> {
   const response = await fetch(`${API_BASE}/admin/profile`, {
     method: "PATCH",

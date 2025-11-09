@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { User, Phone, FileText } from "lucide-react";
+import { User, Phone, FileText, AlertTriangle, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { getAllClients, type ClientWithCount } from "@/lib/api";
+import { getAllClients, cleanupInvalidClient, type ClientWithCount } from "@/lib/api";
+import { isValidPhoneNumber } from "libphonenumber-js";
 
 interface AllClientsProps {
   onClientClick?: (phoneNumber: string) => void;
@@ -37,6 +39,35 @@ export default function AllClients({ onClientClick }: AllClientsProps) {
     }
   };
 
+  const isPhoneValid = (phoneNumber: string): boolean => {
+    try {
+      return isValidPhoneNumber(phoneNumber);
+    } catch {
+      return false;
+    }
+  };
+
+  const handleDeleteInvalid = async (e: React.MouseEvent, phoneNumber: string) => {
+    e.stopPropagation(); // Prevent card click
+    
+    if (window.confirm(`Delete all data for invalid phone number "${phoneNumber}"? This will remove all associated documents.`)) {
+      try {
+        const result = await cleanupInvalidClient(phoneNumber);
+        toast({
+          title: "Cleanup successful",
+          description: `Deleted ${result.deletedDocuments} documents for "${phoneNumber}"`,
+        });
+        await loadData(); // Refresh the list
+      } catch (error) {
+        toast({
+          title: "Cleanup failed",
+          description: error instanceof Error ? error.message : "Failed to cleanup invalid data",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -63,28 +94,52 @@ export default function AllClients({ onClientClick }: AllClientsProps) {
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {clients.map((client) => {
+          const isInvalid = !isPhoneValid(client.phoneNumber);
+          
           return (
             <Card 
               key={client._id} 
-              className="hover-elevate cursor-pointer transition-all" 
+              className={`hover-elevate cursor-pointer transition-all ${isInvalid ? 'border-destructive/50' : ''}`}
               onClick={() => onClientClick?.(client.phoneNumber)}
               data-testid={`card-client-${client.phoneNumber}`}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start gap-3">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <User className="h-6 w-6 text-primary" />
+                  <div className={`h-12 w-12 rounded-full flex items-center justify-center flex-shrink-0 ${isInvalid ? 'bg-destructive/10' : 'bg-primary/10'}`}>
+                    {isInvalid ? (
+                      <AlertTriangle className="h-6 w-6 text-destructive" />
+                    ) : (
+                      <User className="h-6 w-6 text-primary" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg truncate" data-testid={`text-client-name-${client.phoneNumber}`}>
-                      {client.name || "Unnamed Client"}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold text-lg truncate" data-testid={`text-client-name-${client.phoneNumber}`}>
+                        {client.name || "Unnamed Client"}
+                      </h3>
+                      {isInvalid && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={(e) => handleDeleteInvalid(e, client.phoneNumber)}
+                          data-testid={`button-delete-invalid-${client.phoneNumber}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <Phone className="h-3 w-3 text-muted-foreground" />
                       <p className="text-sm text-muted-foreground font-mono" data-testid={`text-client-phone-${client.phoneNumber}`}>
                         {client.phoneNumber}
                       </p>
                     </div>
+                    {isInvalid && (
+                      <Badge variant="destructive" className="mt-2 text-xs">
+                        Invalid Phone Number
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardHeader>
