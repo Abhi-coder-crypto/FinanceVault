@@ -165,6 +165,17 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                 <Button type="submit" className="w-full">
                   Sign In
                 </Button>
+                
+                <div className="text-center text-sm text-muted-foreground">
+                  New user?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setMode("register")}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Register here
+                  </button>
+                </div>
               </form>
             </TabsContent>
             
@@ -262,6 +273,17 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                 >
                   {isSubmitting ? "Creating Account..." : "Create Account"}
                 </Button>
+                
+                <div className="text-center text-sm text-muted-foreground">
+                  Already registered?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Login here
+                  </button>
+                </div>
               </form>
             </TabsContent>
           </Tabs>
