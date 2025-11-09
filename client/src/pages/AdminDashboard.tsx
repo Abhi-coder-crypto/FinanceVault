@@ -9,6 +9,7 @@ import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
 import AdminSettingsForm from "@/components/AdminSettingsForm";
 import { useToast } from "@/hooks/use-toast";
+import adminBackground from "@assets/stock_images/professional_finance_dee7ec85.jpg";
 import {
   Sidebar,
   SidebarContent,
@@ -129,8 +130,13 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <Sidebar>
+      <div className="flex h-screen w-full relative">
+        {/* Professional finance background */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-5 dark:opacity-[0.03]"
+          style={{ backgroundImage: `url(${adminBackground})` }}
+        />
+        <Sidebar className="relative z-10">
           <SidebarHeader className="p-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -176,13 +182,13 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           </SidebarFooter>
         </Sidebar>
 
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="border-b p-4 flex items-center justify-between">
+        <div className="flex flex-col flex-1 overflow-hidden relative z-10">
+          <header className="border-b p-4 flex items-center justify-between backdrop-blur-sm bg-background/95">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
 
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-6 bg-background/80 backdrop-blur-sm">
             {activeView === "dashboard" && (
               <div className="space-y-6">
                 <div>

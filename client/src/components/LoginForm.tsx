@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { register } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import financeBackground from "@assets/stock_images/professional_finance_a69ae8fa.jpg";
 
 interface LoginFormProps {
   onLogin: (phoneNumber: string, password: string) => void;
@@ -107,13 +108,15 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Finance-themed background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-green-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(34,197,94,0.1),transparent_50%)]" />
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.02)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      {/* Professional finance background image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${financeBackground})` }}
+      />
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/85 via-slate-900/90 to-blue-950/85" />
       
-      <Card className="w-full max-w-md relative z-10 shadow-xl">
+      <Card className="w-full max-w-md relative z-10 shadow-2xl border-none backdrop-blur-sm bg-card/95">
         <CardHeader className="space-y-4 text-center pb-6">
           <div className="flex justify-center">
             <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center">

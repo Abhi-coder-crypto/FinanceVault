@@ -7,6 +7,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
 import { getDocuments, downloadDocument } from "@/lib/api";
 import type { User, Document } from "@shared/schema";
+import clientBackground from "@assets/stock_images/professional_finance_15b58088.jpg";
 
 interface ClientPortalProps {
   user: User;
@@ -43,8 +44,13 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b sticky top-0 bg-background z-10">
+    <div className="min-h-screen bg-background relative">
+      {/* Professional finance background */}
+      <div 
+        className="fixed inset-0 bg-cover bg-center opacity-5 dark:opacity-[0.03] pointer-events-none -z-10"
+        style={{ backgroundImage: `url(${clientBackground})` }}
+      />
+      <header className="border-b sticky top-0 backdrop-blur-sm bg-background/95 z-10">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -71,7 +77,7 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 relative z-0">
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-semibold" data-testid="text-page-title">My Documents</h2>
