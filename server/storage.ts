@@ -582,11 +582,11 @@ export const storage = {
   async createDocument(doc: InsertDocument) {
     return (await getStorage()).createDocument(doc);
   },
-  async createDocumentFromStream(doc: Omit<InsertDocument, 'gridFsFileId'>, fileStream: Readable, contentType: string) {
+  async createDocumentFromStream(doc: Omit<InsertDocument, 'filePath' | 'contentType'>, fileStream: Readable, contentType: string) {
     return (await getStorage()).createDocumentFromStream(doc, fileStream, contentType);
   },
-  async getDocumentStream(gridFsFileId: string) {
-    return (await getStorage()).getDocumentStream(gridFsFileId);
+  async getDocumentStream(filePath: string) {
+    return (await getStorage()).getDocumentStream(filePath);
   },
   async deleteDocument(id: string) {
     return (await getStorage()).deleteDocument(id);
