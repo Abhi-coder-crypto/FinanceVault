@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import LoginForm from "@/components/LoginForm";
 import AdminDashboard from "@/pages/AdminDashboard";
 import ClientPortal from "@/pages/ClientPortal";
-import { login } from "@/lib/api";
+import { login, logout } from "@/lib/api";
 import type { User } from "@shared/schema";
 
 function AppContent() {
@@ -32,12 +32,21 @@ function AppContent() {
     }
   };
 
-  const handleLogout = () => {
-    setUser(null);
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
-    });
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setUser(null);
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
+    } catch (error) {
+      setUser(null);
+      toast({
+        title: "Logged out",
+        description: "Session ended",
+      });
+    }
   };
 
   return (

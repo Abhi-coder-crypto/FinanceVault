@@ -5,11 +5,13 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import { z } from "zod";
+import { sessionMiddleware } from "./session";
+import { requireAuth, requireAdmin } from "./middleware/auth";
 
 // Configure multer for file uploads
 const upload = multer({
   dest: "uploads/",
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype === "application/pdf") {
       cb(null, true);
@@ -28,11 +30,13 @@ const loginSchema = z.object({
 const registerSchema = z.object({
   phoneNumber: z.string().min(1),
   password: z.string().min(6),
-  role: z.enum(["admin", "client"]),
   name: z.string().optional(),
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add session middleware
+  app.use(sessionMiddleware);
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -43,6 +47,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(401).json({ error: "Invalid phone number or password" });
       }
+
+      // Set session data
+      req.session.userId = user._id;
+      req.session.phoneNumber = user.phoneNumber;
+      req.session.role = user.role;
 
       // Don't send password to client
       const { password: _, ...userWithoutPassword } = user;
@@ -56,6 +65,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ error: "Logout failed" });
+      }
+      res.json({ success: true });
+    });
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const data = registerSchema.parse(req.body);
@@ -66,8 +84,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "User with this phone number already exists" });
       }
 
-      const user = await storage.createUser(data);
+      // All new users are clients - only admins can create admin accounts
+      const user = await storage.createUser({
+        ...data,
+        role: "client",
+      });
       
+      // Automatically log in the new user
+      req.session.userId = user._id;
+      req.session.phoneNumber = user.phoneNumber;
+      req.session.role = user.role;
+
       // Don't send password to client
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
@@ -80,19 +107,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Document routes
-  app.post("/api/documents/upload", upload.single("file"), async (req, res) => {
+  // Get current user session
+  app.get("/api/auth/me", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({ user: userWithoutPassword });
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Document routes - all require authentication
+  app.post("/api/documents/upload", requireAdmin, upload.single("file"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const { clientPhoneNumber, uploadedBy } = req.body;
+      const { clientPhoneNumber } = req.body;
       
-      if (!clientPhoneNumber || !uploadedBy) {
-        // Clean up uploaded file
+      if (!clientPhoneNumber) {
         await fs.unlink(req.file.path);
-        return res.status(400).json({ error: "Missing required fields" });
+        return res.status(400).json({ error: "Client phone number is required" });
+      }
+
+      // Verify client exists
+      const clientUser = await storage.getUserByPhoneNumber(clientPhoneNumber);
+      if (!clientUser) {
+        await fs.unlink(req.file.path);
+        return res.status(400).json({ error: "Client not found" });
       }
 
       // Store file with original name in uploads directory
@@ -103,14 +151,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileName: req.file.originalname,
         clientPhoneNumber,
         fileSize: req.file.size,
-        dropboxPath: newPath, // Will be Dropbox path when integrated
-        uploadedBy,
+        dropboxPath: newPath,
+        uploadedBy: req.session.userId!,
       });
 
       res.json({ document });
     } catch (error) {
       console.error("Upload error:", error);
-      // Clean up file if it exists
       if (req.file) {
         try {
           await fs.unlink(req.file.path);
@@ -120,17 +167,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/documents", async (req, res) => {
+  app.get("/api/documents", requireAuth, async (req, res) => {
     try {
-      const { clientPhoneNumber } = req.query;
-
-      if (clientPhoneNumber) {
-        // Get documents for specific client
-        const documents = await storage.getDocumentsByClient(clientPhoneNumber as string);
-        res.json({ documents });
+      const isAdmin = req.session.role === "admin";
+      
+      if (isAdmin) {
+        // Admin can get all documents or filter by client
+        const { clientPhoneNumber } = req.query;
+        
+        if (clientPhoneNumber) {
+          const documents = await storage.getDocumentsByClient(clientPhoneNumber as string);
+          res.json({ documents });
+        } else {
+          const documents = await storage.getAllDocuments();
+          res.json({ documents });
+        }
       } else {
-        // Get all documents (admin only)
-        const documents = await storage.getAllDocuments();
+        // Clients can only see their own documents
+        const documents = await storage.getDocumentsByClient(req.session.phoneNumber!);
         res.json({ documents });
       }
     } catch (error) {
@@ -139,13 +193,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/documents/:id/download", async (req, res) => {
+  app.get("/api/documents/:id/download", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
       const document = await storage.getDocument(id);
 
       if (!document) {
         return res.status(404).json({ error: "Document not found" });
+      }
+
+      // Check access: admin can download any, client can only download their own
+      const isAdmin = req.session.role === "admin";
+      const isOwner = document.clientPhoneNumber === req.session.phoneNumber;
+
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ error: "Access denied" });
       }
 
       // Send the file
@@ -156,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/documents/:id", async (req, res) => {
+  app.delete("/api/documents/:id", requireAdmin, async (req, res) => {
     try {
       const { id } = req.params;
       const document = await storage.getDocument(id);

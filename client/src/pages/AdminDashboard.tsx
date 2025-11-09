@@ -71,7 +71,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   const handleUpload = async (phoneNumber: string, file: File) => {
     try {
-      await uploadDocument(phoneNumber, file, user._id);
+      await uploadDocument(phoneNumber, file);
       toast({
         title: "Success",
         description: "Document uploaded successfully",

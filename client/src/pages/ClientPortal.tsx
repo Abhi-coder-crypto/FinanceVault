@@ -25,7 +25,7 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      const docs = await getDocuments(user.phoneNumber);
+      const docs = await getDocuments();
       setDocuments(docs);
     } catch (error) {
       toast({
