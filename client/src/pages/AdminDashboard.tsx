@@ -238,10 +238,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatsCard
-                    title="Total Clients"
-                    value={clients.length}
+                    title="Clients with Documents"
+                    value={clients.filter(c => c.documentCount > 0).length}
                     icon={Users}
-                    description="Registered clients"
+                    description="Active clients"
                   />
                   <StatsCard
                     title="Documents"

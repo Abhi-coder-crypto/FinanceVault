@@ -133,13 +133,18 @@ To migrate your existing PDFs from cloud storage to this system:
 ### November 2025
 - ✅ Removed client pre-registration requirement for document uploads
 - ✅ Added admin settings page (update name, phone number, password)
-- ✅ MongoDB integration active and working
-- ✅ System now accepts document uploads for any client phone number
-- ✅ **GridFS Implementation**: Files now stored in MongoDB GridFS for persistence
-  - Automatic chunking for large files
-  - Survives deployments and republishing
-  - Proper error handling and cleanup
-  - Fallback to filesystem in development mode
+- ✅ **Migrated from GridFS to Filesystem Storage**: Files now stored in `/storage/clients/{phoneNumber}/` for VPS portability
+  - Relative paths stored in MongoDB for portability between Replit and VPS
+  - Timestamp-prefixed filenames prevent overwrites
+  - Path sanitization and validation for security
+  - Persistent across deployments
+- ✅ **Enhanced Admin Dashboard**:
+  - Client list with expandable document dropdowns
+  - Shows ALL clients with documents (registered and unregistered)
+  - Accurate document counts per client
+  - In-page PDF preview modal (no new tab)
+  - Updated stats: "Clients with Documents" shows active clients
+- ✅ MongoDB integration active for user accounts and document metadata
 
 ## Next Steps
 

@@ -19,7 +19,7 @@ export default function PdfPreviewModal({
 }: PdfPreviewModalProps) {
   if (!documentId) return null;
 
-  const previewUrl = `/api/documents/${documentId}/download`;
+  const previewUrl = `/api/documents/${documentId}/preview`;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
