@@ -273,6 +273,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin: Delete client and all their documents
+  app.delete("/api/clients/:phoneNumber", requireAdmin, async (req, res) => {
+    try {
+      const { phoneNumber } = req.params;
+      
+      if (!phoneNumber) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+
+      const result = await storage.deleteClient(phoneNumber);
+      
+      if (!result.deletedClient && result.deletedDocuments === 0) {
+        return res.status(404).json({ error: "Client not found" });
+      }
+
+      res.json({ 
+        success: true,
+        message: `Client deleted successfully`,
+        deletedDocuments: result.deletedDocuments,
+        deletedClient: result.deletedClient
+      });
+    } catch (error) {
+      console.error("Delete client error:", error);
+      res.status(500).json({ error: "Failed to delete client" });
+    }
+  });
+
   // Document routes - all require authentication
   app.post("/api/documents/upload", requireAdmin, upload.single("file"), async (req, res) => {
     let fileHandle = null;
@@ -460,6 +487,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "File not found in storage" });
       }
 
+      // Handle stream errors to prevent crashes
+      fileStream.on('error', (streamError) => {
+        console.error("Preview stream error:", streamError);
+        if (!res.headersSent) {
+          res.status(404).json({ error: "File not found in storage" });
+        }
+      });
+
       res.setHeader("Content-Type", document.contentType);
       res.setHeader("Content-Disposition", `inline; filename="${document.fileName}"`);
       fileStream.pipe(res);
@@ -492,6 +527,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!fileStream) {
         return res.status(404).json({ error: "File not found in storage" });
       }
+
+      // Handle stream errors to prevent crashes
+      fileStream.on('error', (streamError) => {
+        console.error("Download stream error:", streamError);
+        if (!res.headersSent) {
+          res.status(404).json({ error: "File not found in storage" });
+        }
+      });
 
       res.setHeader("Content-Type", document.contentType);
       res.setHeader("Content-Disposition", `attachment; filename="${document.fileName}"`);

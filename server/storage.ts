@@ -36,6 +36,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   verifyPassword(phoneNumber: string, password: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  deleteClient(phoneNumber: string): Promise<{ deletedDocuments: number; deletedClient: boolean }>;
   
   // Document operations
   getDocument(id: string): Promise<Document | undefined>;
@@ -101,6 +102,26 @@ class MemStorage implements IStorage {
     }
     this.users.set(id, updatedUser);
     return updatedUser;
+  }
+
+  async deleteClient(phoneNumber: string): Promise<{ deletedDocuments: number; deletedClient: boolean }> {
+    // Find and delete all documents for this client
+    const documents = await this.getDocumentsByClient(phoneNumber);
+    let deletedCount = 0;
+    
+    for (const doc of documents) {
+      const deleted = await this.deleteDocument(doc._id);
+      if (deleted) deletedCount++;
+    }
+    
+    // Find and delete the client
+    const user = await this.getUserByPhoneNumber(phoneNumber);
+    if (user && user.role === 'client') {
+      this.users.delete(user._id);
+      return { deletedDocuments: deletedCount, deletedClient: true };
+    }
+    
+    return { deletedDocuments: deletedCount, deletedClient: false };
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
@@ -169,6 +190,15 @@ class MemStorage implements IStorage {
         console.error("Security: Attempted path traversal:", absolutePath);
         return null;
       }
+      
+      // Check if file exists before creating stream
+      try {
+        await fs.access(absolutePath);
+      } catch {
+        console.error("File not found:", absolutePath);
+        return null;
+      }
+      
       return fsSync.createReadStream(absolutePath);
     } catch (error) {
       console.error("Error creating read stream:", error);
@@ -348,6 +378,28 @@ class MongoStorage implements IStorage {
     return undefined;
   }
 
+  async deleteClient(phoneNumber: string): Promise<{ deletedDocuments: number; deletedClient: boolean }> {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database not available");
+    
+    // Find and delete all documents for this client
+    const documents = await this.getDocumentsByClient(phoneNumber);
+    let deletedCount = 0;
+    
+    for (const doc of documents) {
+      const deleted = await this.deleteDocument(doc._id);
+      if (deleted) deletedCount++;
+    }
+    
+    // Delete the client record
+    const result = await db.collection('clients').deleteOne({ phoneNumber });
+    
+    return { 
+      deletedDocuments: deletedCount, 
+      deletedClient: result.deletedCount === 1 
+    };
+  }
+
   async getDocument(id: string): Promise<Document | undefined> {
     const db = await getDatabase();
     if (!db) throw new Error("Database not available");
@@ -503,6 +555,15 @@ class MongoStorage implements IStorage {
         console.error("Security: Attempted path traversal:", absolutePath);
         return null;
       }
+      
+      // Check if file exists before creating stream
+      try {
+        await fs.access(absolutePath);
+      } catch {
+        console.error("File not found:", absolutePath);
+        return null;
+      }
+      
       return fsSync.createReadStream(absolutePath);
     } catch (error) {
       console.error("Error opening download stream:", error);
