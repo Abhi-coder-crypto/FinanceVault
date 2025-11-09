@@ -52,20 +52,24 @@ app.use((req, res, next) => {
     // Connect to MongoDB
     const db = await connectToDatabase();
     
-    // Create demo admin user if using in-memory storage
-    if (!db) {
-      const { storage } = await import("./storage");
-      try {
+    // Create demo admin user
+    const { storage } = await import("./storage");
+    try {
+      // Check if admin exists
+      const existingAdmin = await storage.getUserByPhoneNumber("+1111111111");
+      if (!existingAdmin) {
         await storage.createUser({
           phoneNumber: "+1111111111",
-          password: "admin123",
+          password: "Admin@123",
           role: "admin",
           name: "Demo Admin",
         });
-        console.log('✅ Demo admin created: +1111111111 / admin123');
-      } catch (error) {
-        // User might already exist, ignore error
+        console.log('✅ Demo admin created: +1111111111 / Admin@123');
+      } else {
+        console.log('✅ Demo admin already exists: +1111111111');
       }
+    } catch (error) {
+      console.error('⚠️  Failed to create demo admin:', error);
     }
     
     const server = await registerRoutes(app);

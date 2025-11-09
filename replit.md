@@ -25,10 +25,11 @@ A secure document management system designed for finance companies to store and 
 
 **Admin Account** (for testing):
 - Phone: `+1111111111`
-- Password: `admin123`
+- Password: `Admin@123`
 
 **Client Account** (for testing):
-- Register any phone number to create a client account
+- Register any phone number with country code (e.g., +1234567890) to create a client account
+- Password must be strong: 8+ chars, uppercase, lowercase, number, special character
 
 ## Features
 
