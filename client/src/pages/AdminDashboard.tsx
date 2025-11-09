@@ -10,6 +10,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AdminSettingsForm from "@/components/AdminSettingsForm";
 import AllClients from "@/components/AllClients";
 import BulkUploadForm from "@/components/BulkUploadForm";
+import ClientDocumentList from "@/components/ClientDocumentList";
+import PdfPreviewModal from "@/components/PdfPreviewModal";
 import { useToast } from "@/hooks/use-toast";
 import adminBackground from "@assets/stock_images/professional_finance_dee7ec85.jpg";
 import {
@@ -50,6 +52,9 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(user);
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState<string | undefined>(undefined);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -120,7 +125,16 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   };
 
   const handlePreview = (id: string) => {
-    previewDocument(id);
+    const doc = documents.find(d => d._id === id);
+    setPreviewDocumentId(id);
+    setPreviewFileName(doc?.fileName);
+    setPreviewModalOpen(true);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewModalOpen(false);
+    setPreviewDocumentId(null);
+    setPreviewFileName(undefined);
   };
 
   const handleUpdateProfile = async (data: { name?: string; phoneNumber?: string; password?: string }) => {
@@ -249,45 +263,21 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold">Recent Documents</h2>
-                    <div className="w-full max-w-sm">
-                      <SearchBar
-                        value={searchQuery}
-                        onChange={setSearchQuery}
-                        placeholder="Search by client phone..."
-                      />
-                    </div>
+                  <div>
+                    <h2 className="text-xl font-semibold mb-4">Documents by Client</h2>
                   </div>
 
                   {loading ? (
                     <div className="text-center py-12">
                       <p className="text-muted-foreground">Loading documents...</p>
                     </div>
-                  ) : filteredDocuments.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {filteredDocuments.map((doc) => (
-                        <DocumentCard
-                          key={doc._id}
-                          fileName={doc.fileName}
-                          clientPhoneNumber={doc.clientPhoneNumber}
-                          uploadDate={doc.uploadDate}
-                          fileSize={doc.fileSize}
-                          onDownload={() => handleDownload(doc._id)}
-                          onDelete={() => handleDelete(doc._id)}
-                          onPreview={() => handlePreview(doc._id)}
-                          isAdmin={true}
-                        />
-                      ))}
-                    </div>
                   ) : (
-                    <EmptyState
-                      message="No documents found"
-                      description={
-                        searchQuery
-                          ? "Try a different phone number"
-                          : "Upload documents to get started"
-                      }
+                    <ClientDocumentList
+                      clients={clients}
+                      documents={documents}
+                      onDownload={handleDownload}
+                      onPreview={handlePreview}
+                      onDelete={handleDelete}
                     />
                   )}
                 </div>
@@ -342,6 +332,14 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             )}
           </main>
         </div>
+
+        <PdfPreviewModal
+          open={previewModalOpen}
+          onClose={handleClosePreview}
+          documentId={previewDocumentId}
+          fileName={previewFileName}
+          onDownload={previewDocumentId ? () => handleDownload(previewDocumentId) : undefined}
+        />
       </div>
     </SidebarProvider>
   );

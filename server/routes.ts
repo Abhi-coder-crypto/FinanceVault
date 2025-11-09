@@ -114,22 +114,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all clients with document counts (admin only)
   app.get("/api/clients", requireAdmin, async (req, res) => {
     try {
-      const clients = await storage.getAllClients();
+      const registeredClients = await storage.getAllClients();
       const documents = await storage.getAllDocuments();
       
-      // Calculate document count for each client server-side
-      const clientsWithCounts = clients.map(client => {
-        const documentCount = documents.filter(
-          doc => doc.clientPhoneNumber === client.phoneNumber
-        ).length;
-        return {
-          _id: client._id,
-          phoneNumber: client.phoneNumber,
-          role: client.role,
+      // Group documents by phone number
+      const phoneNumberMap = new Map<string, { name?: string, documentCount: number, _id?: string, role?: string }>();
+      
+      // Add registered clients
+      registeredClients.forEach(client => {
+        phoneNumberMap.set(client.phoneNumber, {
           name: client.name,
-          documentCount,
-        };
+          documentCount: 0,
+          _id: client._id,
+          role: client.role
+        });
       });
+      
+      // Count documents for each phone number (including unregistered)
+      documents.forEach(doc => {
+        const existing = phoneNumberMap.get(doc.clientPhoneNumber);
+        if (existing) {
+          existing.documentCount++;
+        } else {
+          // Client has documents but hasn't registered yet
+          phoneNumberMap.set(doc.clientPhoneNumber, {
+            name: undefined,
+            documentCount: 1,
+            _id: doc.clientPhoneNumber, // Use phone as ID for unregistered
+            role: undefined
+          });
+        }
+      });
+      
+      // Convert map to array
+      const clientsWithCounts = Array.from(phoneNumberMap.entries()).map(([phoneNumber, data]) => ({
+        _id: data._id || phoneNumber,
+        phoneNumber,
+        role: data.role || 'client',
+        name: data.name,
+        documentCount: data.documentCount,
+      }));
       
       res.json({ clients: clientsWithCounts });
     } catch (error) {
