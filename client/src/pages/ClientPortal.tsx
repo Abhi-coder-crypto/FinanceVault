@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import DocumentCard from "@/components/DocumentCard";
 import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
+import PdfPreviewModal from "@/components/PdfPreviewModal";
 import { useToast } from "@/hooks/use-toast";
-import { getDocuments, downloadDocument, previewDocument } from "@/lib/api";
+import { getDocuments, downloadDocument } from "@/lib/api";
 import type { User, Document } from "@shared/schema";
 import clientBackground from "@assets/stock_images/professional_finance_15b58088.jpg";
 
@@ -17,6 +18,9 @@ interface ClientPortalProps {
 export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewDocumentId, setPreviewDocumentId] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState<string | undefined>(undefined);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,7 +48,10 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
   };
 
   const handlePreview = (id: string) => {
-    previewDocument(id);
+    const doc = documents.find(d => d._id === id);
+    setPreviewDocumentId(id);
+    setPreviewFileName(doc?.fileName);
+    setPreviewModalOpen(true);
   };
 
   return (
@@ -116,6 +123,14 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
           )}
         </div>
       </main>
+
+      <PdfPreviewModal
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        documentId={previewDocumentId}
+        fileName={previewFileName}
+        onDownload={previewDocumentId ? () => handleDownload(previewDocumentId) : undefined}
+      />
     </div>
   );
 }
