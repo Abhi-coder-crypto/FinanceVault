@@ -118,46 +118,74 @@ class MongoStorage implements IStorage {
     const db = await getDatabase();
     if (!db) throw new Error("Database not available");
     
-    const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
-    if (!user) return undefined;
-    return {
-      _id: user._id.toString(),
-      phoneNumber: user.phoneNumber,
-      password: user.password,
-      role: user.role,
-      name: user.name,
-    };
+    const client = await db.collection('clients').findOne({ _id: new ObjectId(id) });
+    if (client) {
+      return {
+        _id: client._id.toString(),
+        phoneNumber: client.phoneNumber,
+        password: client.password,
+        role: 'client' as const,
+        name: client.name,
+      };
+    }
+    
+    const admin = await db.collection('admin').findOne({ _id: new ObjectId(id) });
+    if (admin) {
+      return {
+        _id: admin._id.toString(),
+        phoneNumber: admin.phoneNumber,
+        password: admin.password,
+        role: 'admin' as const,
+        name: admin.name,
+      };
+    }
+    
+    return undefined;
   }
 
   async getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
     const db = await getDatabase();
     if (!db) throw new Error("Database not available");
     
-    const user = await db.collection('users').findOne({ phoneNumber });
-    if (!user) return undefined;
-    return {
-      _id: user._id.toString(),
-      phoneNumber: user.phoneNumber,
-      password: user.password,
-      role: user.role,
-      name: user.name,
-    };
+    const client = await db.collection('clients').findOne({ phoneNumber });
+    if (client) {
+      return {
+        _id: client._id.toString(),
+        phoneNumber: client.phoneNumber,
+        password: client.password,
+        role: 'client' as const,
+        name: client.name,
+      };
+    }
+    
+    const admin = await db.collection('admin').findOne({ phoneNumber });
+    if (admin) {
+      return {
+        _id: admin._id.toString(),
+        phoneNumber: admin.phoneNumber,
+        password: admin.password,
+        role: 'admin' as const,
+        name: admin.name,
+      };
+    }
+    
+    return undefined;
   }
 
   async getAllClients(): Promise<UserWithoutPassword[]> {
     const db = await getDatabase();
     if (!db) throw new Error("Database not available");
     
-    const users = await db.collection('users')
-      .find({ role: 'client' })
+    const clients = await db.collection('clients')
+      .find({})
       .sort({ phoneNumber: 1 })
       .toArray();
     
-    return users.map(user => ({
-      _id: user._id.toString(),
-      phoneNumber: user.phoneNumber,
-      role: user.role,
-      name: user.name,
+    return clients.map(client => ({
+      _id: client._id.toString(),
+      phoneNumber: client.phoneNumber,
+      role: 'client' as const,
+      name: client.name,
     }));
   }
 
@@ -167,10 +195,11 @@ class MongoStorage implements IStorage {
     
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
     
-    const result = await db.collection('users').insertOne({
+    const collectionName = insertUser.role === 'admin' ? 'admin' : 'clients';
+    
+    const result = await db.collection(collectionName).insertOne({
       phoneNumber: insertUser.phoneNumber,
       password: hashedPassword,
-      role: insertUser.role,
       name: insertUser.name,
     });
 
@@ -204,21 +233,39 @@ class MongoStorage implements IStorage {
       updateDoc.password = await bcrypt.hash(updates.password, 10);
     }
     
-    const result = await db.collection('users').findOneAndUpdate(
+    let result = await db.collection('clients').findOneAndUpdate(
       { _id: new ObjectId(id) },
       { $set: updateDoc },
       { returnDocument: 'after' }
     );
     
-    if (!result) return undefined;
+    if (result) {
+      return {
+        _id: result._id.toString(),
+        phoneNumber: result.phoneNumber,
+        password: result.password,
+        role: 'client' as const,
+        name: result.name,
+      };
+    }
     
-    return {
-      _id: result._id.toString(),
-      phoneNumber: result.phoneNumber,
-      password: result.password,
-      role: result.role,
-      name: result.name,
-    };
+    result = await db.collection('admin').findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updateDoc },
+      { returnDocument: 'after' }
+    );
+    
+    if (result) {
+      return {
+        _id: result._id.toString(),
+        phoneNumber: result.phoneNumber,
+        password: result.password,
+        role: 'admin' as const,
+        name: result.name,
+      };
+    }
+    
+    return undefined;
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
