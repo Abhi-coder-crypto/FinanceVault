@@ -113,3 +113,10 @@ export const updateAdminProfileSchema = z.object({
 });
 
 export type UpdateAdminProfile = z.infer<typeof updateAdminProfileSchema>;
+
+export const resetUserPasswordSchema = z.object({
+  phoneNumber: phoneNumberSchema,
+  newPassword: z.string().min(1, "Password is required"),
+});
+
+export type ResetUserPassword = z.infer<typeof resetUserPasswordSchema>;

@@ -7,7 +7,7 @@ import fs from "fs/promises";
 import { z } from "zod";
 import { sessionMiddleware } from "./session";
 import { requireAuth, requireAdmin } from "./middleware/auth";
-import { loginSchema, registerSchema, updateAdminProfileSchema, uploadDocumentSchema, phoneNumberSchema } from "@shared/schema";
+import { loginSchema, registerSchema, updateAdminProfileSchema, uploadDocumentSchema, phoneNumberSchema, resetUserPasswordSchema } from "@shared/schema";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -237,6 +237,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       console.error("Update profile error:", error);
       res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
+  // Admin: Reset user password
+  app.post("/api/admin/reset-user-password", requireAdmin, async (req, res) => {
+    try {
+      const { phoneNumber, newPassword } = resetUserPasswordSchema.parse(req.body);
+      
+      const user = await storage.getUserByPhoneNumber(phoneNumber);
+      if (!user) {
+        return res.status(404).json({ error: "User not found with this phone number" });
+      }
+
+      const updatedUser = await storage.updateUser(user._id, { password: newPassword });
+      if (!updatedUser) {
+        return res.status(500).json({ error: "Failed to update password" });
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Password updated successfully for ${phoneNumber}`,
+        user: {
+          phoneNumber: updatedUser.phoneNumber,
+          name: updatedUser.name,
+          role: updatedUser.role
+        }
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid input", details: error.errors });
+      }
+      console.error("Password reset error:", error);
+      res.status(500).json({ error: "Failed to reset password" });
     }
   });
 
