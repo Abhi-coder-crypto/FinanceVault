@@ -85,6 +85,10 @@ export async function getDocuments(clientPhoneNumber?: string): Promise<Document
   return data.documents;
 }
 
+export async function previewDocument(id: string): Promise<void> {
+  window.open(`${API_BASE}/documents/${id}/preview`, "_blank");
+}
+
 export async function downloadDocument(id: string): Promise<void> {
   window.open(`${API_BASE}/documents/${id}/download`, "_blank");
 }

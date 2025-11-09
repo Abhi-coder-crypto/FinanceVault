@@ -5,7 +5,7 @@ import DocumentCard from "@/components/DocumentCard";
 import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useToast } from "@/hooks/use-toast";
-import { getDocuments, downloadDocument } from "@/lib/api";
+import { getDocuments, downloadDocument, previewDocument } from "@/lib/api";
 import type { User, Document } from "@shared/schema";
 import clientBackground from "@assets/stock_images/professional_finance_15b58088.jpg";
 
@@ -41,6 +41,10 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
 
   const handleDownload = (id: string) => {
     downloadDocument(id);
+  };
+
+  const handlePreview = (id: string) => {
+    previewDocument(id);
   };
 
   return (
@@ -99,7 +103,7 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
                   uploadDate={doc.uploadDate}
                   fileSize={doc.fileSize}
                   onDownload={() => handleDownload(doc._id)}
-                  onPreview={() => handleDownload(doc._id)}
+                  onPreview={() => handlePreview(doc._id)}
                   isAdmin={false}
                 />
               ))}

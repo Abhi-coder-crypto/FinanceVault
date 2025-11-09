@@ -25,7 +25,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Shield } from "lucide-react";
-import { getDocuments, uploadDocument, deleteDocument, downloadDocument, updateAdminProfile } from "@/lib/api";
+import { getDocuments, uploadDocument, deleteDocument, downloadDocument, previewDocument, updateAdminProfile } from "@/lib/api";
 import type { User, Document } from "@shared/schema";
 
 const menuItems = [
@@ -109,6 +109,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   const handleDownload = (id: string) => {
     downloadDocument(id);
+  };
+
+  const handlePreview = (id: string) => {
+    previewDocument(id);
   };
 
   const handleUpdateProfile = async (data: { name?: string; phoneNumber?: string; password?: string }) => {
@@ -251,7 +255,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                           fileSize={doc.fileSize}
                           onDownload={() => handleDownload(doc._id)}
                           onDelete={() => handleDelete(doc._id)}
-                          onPreview={() => handleDownload(doc._id)}
+                          onPreview={() => handlePreview(doc._id)}
                           isAdmin={true}
                         />
                       ))}

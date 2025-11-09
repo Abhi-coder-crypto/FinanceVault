@@ -211,6 +211,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/documents/:id/preview", requireAuth, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const document = await storage.getDocument(id);
+
+      if (!document) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+
+      // Check access: admin can preview any, client can only preview their own
+      const isAdmin = req.session.role === "admin";
+      const isOwner = document.clientPhoneNumber === req.session.phoneNumber;
+
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      // Send file for inline display (preview in browser)
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${document.fileName}"`);
+      res.sendFile(path.resolve(document.dropboxPath));
+    } catch (error) {
+      console.error("Preview error:", error);
+      res.status(500).json({ error: "Failed to preview document" });
+    }
+  });
+
   app.get("/api/documents/:id/download", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
@@ -228,7 +255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Access denied" });
       }
 
-      // Send the file
+      // Send the file as download (saves to computer)
       res.download(document.dropboxPath, document.fileName);
     } catch (error) {
       console.error("Download error:", error);
