@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Document, type InsertDocument } from "@shared/schema";
+import { type User, type InsertUser, type Document, type InsertDocument, type UpdateAdminProfile } from "@shared/schema";
 import { getDatabase } from "./db";
 import bcrypt from "bcryptjs";
 import { ObjectId } from "mongodb";
@@ -9,6 +9,7 @@ export interface IStorage {
   getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   verifyPassword(phoneNumber: string, password: string): Promise<User | null>;
+  updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   
   // Document operations
   getDocument(id: string): Promise<Document | undefined>;
@@ -54,6 +55,18 @@ class MemStorage implements IStorage {
     if (!isValid) return null;
     
     return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, ...updates };
+    if (updates.password) {
+      updatedUser.password = await bcrypt.hash(updates.password, 10);
+    }
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
@@ -152,6 +165,34 @@ class MongoStorage implements IStorage {
     if (!isValid) return null;
     
     return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database not available");
+    
+    const updateDoc: any = {};
+    if (updates.name !== undefined) updateDoc.name = updates.name;
+    if (updates.phoneNumber !== undefined) updateDoc.phoneNumber = updates.phoneNumber;
+    if (updates.password !== undefined) {
+      updateDoc.password = await bcrypt.hash(updates.password, 10);
+    }
+    
+    const result = await db.collection('users').findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updateDoc },
+      { returnDocument: 'after' }
+    );
+    
+    if (!result) return undefined;
+    
+    return {
+      _id: result._id.toString(),
+      phoneNumber: result.phoneNumber,
+      password: result.password,
+      role: result.role,
+      name: result.name,
+    };
   }
 
   async getDocument(id: string): Promise<Document | undefined> {
@@ -277,6 +318,9 @@ export const storage = {
   },
   async verifyPassword(phoneNumber: string, password: string) {
     return (await getStorage()).verifyPassword(phoneNumber, password);
+  },
+  async updateUser(id: string, updates: Partial<User>) {
+    return (await getStorage()).updateUser(id, updates);
   },
   async getDocument(id: string) {
     return (await getStorage()).getDocument(id);

@@ -7,7 +7,7 @@ import fs from "fs/promises";
 import { z } from "zod";
 import { sessionMiddleware } from "./session";
 import { requireAuth, requireAdmin } from "./middleware/auth";
-import { loginSchema, registerSchema } from "@shared/schema";
+import { loginSchema, registerSchema, updateAdminProfileSchema } from "@shared/schema";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -111,6 +111,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update admin profile
+  app.patch("/api/admin/profile", requireAdmin, async (req, res) => {
+    try {
+      const data = updateAdminProfileSchema.parse(req.body);
+      
+      const updates: Partial<typeof data> & { password?: string } = {};
+      if (data.name) updates.name = data.name;
+      if (data.phoneNumber) {
+        const existingUser = await storage.getUserByPhoneNumber(data.phoneNumber);
+        if (existingUser && existingUser._id !== req.session.userId) {
+          return res.status(400).json({ error: "Phone number already in use" });
+        }
+        updates.phoneNumber = data.phoneNumber;
+      }
+      if (data.password) updates.password = data.password;
+
+      const updatedUser = await storage.updateUser(req.session.userId!, updates);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (updates.phoneNumber) {
+        req.session.phoneNumber = updates.phoneNumber;
+      }
+
+      const { password: _, ...userWithoutPassword } = updatedUser;
+      res.json({ user: userWithoutPassword });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid input", details: error.errors });
+      }
+      console.error("Update profile error:", error);
+      res.status(500).json({ error: "Failed to update profile" });
+    }
+  });
+
   // Document routes - all require authentication
   app.post("/api/documents/upload", requireAdmin, upload.single("file"), async (req, res) => {
     try {
@@ -123,13 +159,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!clientPhoneNumber) {
         await fs.unlink(req.file.path);
         return res.status(400).json({ error: "Client phone number is required" });
-      }
-
-      // Verify client exists
-      const clientUser = await storage.getUserByPhoneNumber(clientPhoneNumber);
-      if (!clientUser) {
-        await fs.unlink(req.file.path);
-        return res.status(400).json({ error: "Client not found" });
       }
 
       // Store file with original name in uploads directory

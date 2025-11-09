@@ -7,6 +7,7 @@ import DocumentCard from "@/components/DocumentCard";
 import UploadDocumentForm from "@/components/UploadDocumentForm";
 import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
+import AdminSettingsForm from "@/components/AdminSettingsForm";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
@@ -23,7 +24,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Shield } from "lucide-react";
-import { getDocuments, uploadDocument, deleteDocument, downloadDocument } from "@/lib/api";
+import { getDocuments, uploadDocument, deleteDocument, downloadDocument, updateAdminProfile } from "@/lib/api";
 import type { User, Document } from "@shared/schema";
 
 const menuItems = [
@@ -43,6 +44,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [searchQuery, setSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(user);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -106,6 +108,19 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
   const handleDownload = (id: string) => {
     downloadDocument(id);
+  };
+
+  const handleUpdateProfile = async (data: { name?: string; phoneNumber?: string; password?: string }) => {
+    try {
+      const updatedUser = await updateAdminProfile(data);
+      setCurrentUser(updatedUser);
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    } catch (error) {
+      throw error;
+    }
   };
 
   const sidebarStyle = {
@@ -286,10 +301,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                     Configure your account and preferences
                   </p>
                 </div>
-                <EmptyState
-                  message="Settings"
-                  description="This feature will be implemented in the next phase"
-                />
+                <AdminSettingsForm user={currentUser} onUpdate={handleUpdateProfile} />
               </div>
             )}
           </main>

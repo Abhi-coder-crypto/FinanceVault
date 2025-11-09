@@ -73,3 +73,13 @@ export const registerSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+export const updateAdminProfileSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  phoneNumber: phoneNumberSchema.optional(),
+  password: strongPasswordSchema.optional(),
+}).refine((data) => data.name || data.phoneNumber || data.password, {
+  message: "At least one field must be provided",
+});
+
+export type UpdateAdminProfile = z.infer<typeof updateAdminProfileSchema>;

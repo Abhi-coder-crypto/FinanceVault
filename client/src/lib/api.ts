@@ -100,3 +100,20 @@ export async function deleteDocument(id: string): Promise<void> {
     throw new Error(error.error || "Delete failed");
   }
 }
+
+export async function updateAdminProfile(data: { name?: string; phoneNumber?: string; password?: string }): Promise<User> {
+  const response = await fetch(`${API_BASE}/admin/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to update profile");
+  }
+
+  const result = await response.json();
+  return result.user;
+}
