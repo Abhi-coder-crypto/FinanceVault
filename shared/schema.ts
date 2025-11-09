@@ -1,6 +1,30 @@
 import { z } from "zod";
 import { parsePhoneNumber, isValidPhoneNumber } from "libphonenumber-js";
 
+export const clientSchema = z.object({
+  _id: z.string(),
+  phoneNumber: z.string(),
+  password: z.string(),
+  name: z.string().optional(),
+});
+
+export const insertClientSchema = clientSchema.omit({ _id: true });
+
+export type Client = z.infer<typeof clientSchema>;
+export type InsertClient = z.infer<typeof insertClientSchema>;
+
+export const adminSchema = z.object({
+  _id: z.string(),
+  phoneNumber: z.string(),
+  password: z.string(),
+  name: z.string().optional(),
+});
+
+export const insertAdminSchema = adminSchema.omit({ _id: true });
+
+export type Admin = z.infer<typeof adminSchema>;
+export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+
 export const userSchema = z.object({
   _id: z.string(),
   phoneNumber: z.string(),
