@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Users, FileText, Upload, LogOut, Home, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import StatsCard from "@/components/StatsCard";
 import SearchBar from "@/components/SearchBar";
 import DocumentCard from "@/components/DocumentCard";
@@ -292,16 +295,36 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                     Upload documents for clients - single or bulk upload
                   </p>
                 </div>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="upload-phone">Client Phone Number</Label>
+                      <Input
+                        id="upload-phone"
+                        type="tel"
+                        placeholder="+1 (555) 000-0000"
+                        value={selectedPhoneNumber || ""}
+                        onChange={(e) => setSelectedPhoneNumber(e.target.value)}
+                        className="font-mono"
+                        data-testid="input-upload-phone"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Enter the phone number once - use it for both single and bulk uploads below
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
                 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div>
-                    <h2 className="text-lg font-semibold mb-4">Single Upload</h2>
-                    <UploadDocumentForm onUpload={handleUpload} initialPhoneNumber={selectedPhoneNumber} />
+                    <h2 className="text-lg font-semibold mb-4">Single File Upload</h2>
+                    <UploadDocumentForm onUpload={handleUpload} phoneNumber={selectedPhoneNumber || ""} />
                   </div>
                   
                   <div>
-                    <h2 className="text-lg font-semibold mb-4">Bulk Upload</h2>
-                    <BulkUploadForm onComplete={loadData} />
+                    <h2 className="text-lg font-semibold mb-4">Multiple Files Upload</h2>
+                    <BulkUploadForm onComplete={loadData} phoneNumber={selectedPhoneNumber || ""} />
                   </div>
                 </div>
               </div>

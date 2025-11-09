@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,18 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 interface UploadDocumentFormProps {
   onUpload: (phoneNumber: string, file: File) => void;
-  initialPhoneNumber?: string;
+  phoneNumber: string;
 }
 
-export default function UploadDocumentForm({ onUpload, initialPhoneNumber }: UploadDocumentFormProps) {
-  const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber || "");
+export default function UploadDocumentForm({ onUpload, phoneNumber }: UploadDocumentFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  useEffect(() => {
-    if (initialPhoneNumber) {
-      setPhoneNumber(initialPhoneNumber);
-    }
-  }, [initialPhoneNumber]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -30,7 +23,6 @@ export default function UploadDocumentForm({ onUpload, initialPhoneNumber }: Upl
     e.preventDefault();
     if (selectedFile && phoneNumber) {
       onUpload(phoneNumber, selectedFile);
-      setPhoneNumber("");
       setSelectedFile(null);
     }
   };
@@ -42,29 +34,13 @@ export default function UploadDocumentForm({ onUpload, initialPhoneNumber }: Upl
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Upload Document</CardTitle>
+        <CardTitle>Upload Single File</CardTitle>
         <CardDescription>
-          Upload a document for a client by entering their phone number
+          Upload one PDF file for the client
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="client-phone" data-testid="label-client-phone">
-              Client Phone Number
-            </Label>
-            <Input
-              id="client-phone"
-              type="tel"
-              placeholder="+1 (555) 000-0000"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="font-mono"
-              data-testid="input-client-phone"
-              required
-            />
-          </div>
-
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="file-upload" data-testid="label-file">
               Document File

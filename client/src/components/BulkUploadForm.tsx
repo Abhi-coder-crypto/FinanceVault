@@ -9,8 +9,12 @@ import { uploadMultipleDocuments } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { isValidPhoneNumber } from "libphonenumber-js";
 
-export default function BulkUploadForm({ onComplete }: { onComplete?: () => void }) {
-  const [phoneNumber, setPhoneNumber] = useState("");
+interface BulkUploadFormProps {
+  onComplete?: () => void;
+  phoneNumber: string;
+}
+
+export default function BulkUploadForm({ onComplete, phoneNumber }: BulkUploadFormProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -189,7 +193,6 @@ export default function BulkUploadForm({ onComplete }: { onComplete?: () => void
 
       // Clear form on success
       if (result.errorCount === 0) {
-        setPhoneNumber("");
         setFiles([]);
       }
 
@@ -217,25 +220,12 @@ export default function BulkUploadForm({ onComplete }: { onComplete?: () => void
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Bulk Upload - Multiple PDFs</CardTitle>
+        <CardTitle>Upload Multiple Files</CardTitle>
         <CardDescription>
-          Upload multiple PDFs for one client. Enter phone number and drag folders or files with any name.
+          Upload multiple PDFs for the client. Drag folders or individual files.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="bulk-phone">Client Phone Number</Label>
-          <Input
-            id="bulk-phone"
-            type="tel"
-            placeholder="+1 (555) 000-0000"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            disabled={isUploading}
-            data-testid="input-bulk-phone"
-          />
-        </div>
-
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
