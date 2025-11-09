@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, FileText, Upload, LogOut, Home, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatsCard from "@/components/StatsCard";
@@ -7,6 +7,7 @@ import DocumentCard from "@/components/DocumentCard";
 import UploadDocumentForm from "@/components/UploadDocumentForm";
 import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +23,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Shield } from "lucide-react";
+import { getDocuments, uploadDocument, deleteDocument, downloadDocument } from "@/lib/api";
+import type { User, Document } from "@shared/schema";
 
 const menuItems = [
   { title: "Dashboard", icon: Home, id: "dashboard" },
@@ -30,58 +33,79 @@ const menuItems = [
   { title: "Settings", icon: Settings, id: "settings" },
 ];
 
-// todo: remove mock functionality
-const mockDocuments = [
-  {
-    id: "1",
-    fileName: "Tax_Return_2023.pdf",
-    clientPhoneNumber: "+1 (555) 123-4567",
-    uploadDate: "2024-01-15T10:30:00Z",
-    fileSize: 2456789,
-  },
-  {
-    id: "2",
-    fileName: "Investment_Statement_Q4.pdf",
-    clientPhoneNumber: "+1 (555) 234-5678",
-    uploadDate: "2024-02-20T14:45:00Z",
-    fileSize: 1234567,
-  },
-  {
-    id: "3",
-    fileName: "Account_Summary_2024.pdf",
-    clientPhoneNumber: "+1 (555) 345-6789",
-    uploadDate: "2024-03-10T09:15:00Z",
-    fileSize: 987654,
-  },
-];
+interface AdminDashboardProps {
+  user: User;
+  onLogout: () => void;
+}
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
   const [activeView, setActiveView] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
-  const [documents, setDocuments] = useState(mockDocuments);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const loadDocuments = async () => {
+    try {
+      setLoading(true);
+      const docs = await getDocuments();
+      setDocuments(docs);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load documents",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredDocuments = documents.filter((doc) =>
     doc.clientPhoneNumber.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleUpload = (phoneNumber: string, file: File) => {
-    console.log("Uploading document:", phoneNumber, file);
-    // todo: remove mock functionality
-    const newDoc = {
-      id: String(documents.length + 1),
-      fileName: file.name,
-      clientPhoneNumber: phoneNumber,
-      uploadDate: new Date().toISOString(),
-      fileSize: file.size,
-    };
-    setDocuments([newDoc, ...documents]);
-    setActiveView("dashboard");
+  const handleUpload = async (phoneNumber: string, file: File) => {
+    try {
+      await uploadDocument(phoneNumber, file, user._id);
+      toast({
+        title: "Success",
+        description: "Document uploaded successfully",
+      });
+      await loadDocuments();
+      setActiveView("dashboard");
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload document",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    console.log("Deleting document:", id);
-    // todo: remove mock functionality
-    setDocuments(documents.filter((doc) => doc.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteDocument(id);
+      toast({
+        title: "Success",
+        description: "Document deleted successfully",
+      });
+      await loadDocuments();
+    } catch (error) {
+      toast({
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Failed to delete document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownload = (id: string) => {
+    downloadDocument(id);
   };
 
   const sidebarStyle = {
@@ -128,7 +152,7 @@ export default function AdminDashboard() {
             <Button
               variant="ghost"
               className="w-full justify-start"
-              onClick={() => console.log("Logout")}
+              onClick={onLogout}
               data-testid="button-logout"
             >
               <LogOut className="h-4 w-4 mr-2" />
@@ -156,19 +180,24 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatsCard
                     title="Total Clients"
-                    value="1,247"
+                    value={new Set(documents.map(d => d.clientPhoneNumber)).size}
                     icon={Users}
-                    description="+12% from last month"
+                    description="Unique clients"
                   />
                   <StatsCard
                     title="Documents"
                     value={documents.length}
                     icon={FileText}
-                    description="Across all clients"
+                    description="Total documents"
                   />
                   <StatsCard
                     title="This Month"
-                    value="156"
+                    value={documents.filter(d => {
+                      const uploadDate = new Date(d.uploadDate);
+                      const now = new Date();
+                      return uploadDate.getMonth() === now.getMonth() && 
+                             uploadDate.getFullYear() === now.getFullYear();
+                    }).length}
                     icon={Upload}
                     description="New uploads"
                   />
@@ -186,18 +215,22 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {filteredDocuments.length > 0 ? (
+                  {loading ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground">Loading documents...</p>
+                    </div>
+                  ) : filteredDocuments.length > 0 ? (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {filteredDocuments.map((doc) => (
                         <DocumentCard
-                          key={doc.id}
+                          key={doc._id}
                           fileName={doc.fileName}
                           clientPhoneNumber={doc.clientPhoneNumber}
                           uploadDate={doc.uploadDate}
                           fileSize={doc.fileSize}
-                          onDownload={() => console.log("Download:", doc.id)}
-                          onDelete={() => handleDelete(doc.id)}
-                          onPreview={() => console.log("Preview:", doc.id)}
+                          onDownload={() => handleDownload(doc._id)}
+                          onDelete={() => handleDelete(doc._id)}
+                          onPreview={() => handleDownload(doc._id)}
                           isAdmin={true}
                         />
                       ))}

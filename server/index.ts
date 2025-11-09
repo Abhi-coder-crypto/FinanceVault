@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { connectToDatabase, closeDatabase } from "./db";
 
 const app = express();
 
@@ -47,7 +48,27 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  try {
+    // Connect to MongoDB
+    const db = await connectToDatabase();
+    
+    // Create demo admin user if using in-memory storage
+    if (!db) {
+      const { storage } = await import("./storage");
+      try {
+        await storage.createUser({
+          phoneNumber: "+1111111111",
+          password: "admin123",
+          role: "admin",
+          name: "Demo Admin",
+        });
+        console.log('✅ Demo admin created: +1111111111 / admin123');
+      } catch (error) {
+        // User might already exist, ignore error
+      }
+    }
+    
+    const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -78,4 +99,15 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
   });
+
+    // Graceful shutdown
+    process.on("SIGTERM", async () => {
+      console.log("SIGTERM received, closing database connection...");
+      await closeDatabase();
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 })();

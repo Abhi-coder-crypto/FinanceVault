@@ -1,39 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DocumentCard from "@/components/DocumentCard";
 import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
-
-// todo: remove mock functionality
-const mockClientDocuments = [
-  {
-    id: "1",
-    fileName: "Tax_Return_2023.pdf",
-    uploadDate: "2024-01-15T10:30:00Z",
-    fileSize: 2456789,
-  },
-  {
-    id: "2",
-    fileName: "Investment_Statement_Q4.pdf",
-    uploadDate: "2024-02-20T14:45:00Z",
-    fileSize: 1234567,
-  },
-  {
-    id: "3",
-    fileName: "Account_Summary_2024.pdf",
-    uploadDate: "2024-03-10T09:15:00Z",
-    fileSize: 987654,
-  },
-];
+import { useToast } from "@/hooks/use-toast";
+import { getDocuments, downloadDocument } from "@/lib/api";
+import type { User, Document } from "@shared/schema";
 
 interface ClientPortalProps {
-  phoneNumber: string;
+  user: User;
   onLogout: () => void;
 }
 
-export default function ClientPortal({ phoneNumber, onLogout }: ClientPortalProps) {
-  const [documents] = useState(mockClientDocuments);
+export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadDocuments();
+  }, [user.phoneNumber]);
+
+  const loadDocuments = async () => {
+    try {
+      setLoading(true);
+      const docs = await getDocuments(user.phoneNumber);
+      setDocuments(docs);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load documents",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = (id: string) => {
+    downloadDocument(id);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,7 +53,7 @@ export default function ClientPortal({ phoneNumber, onLogout }: ClientPortalProp
             <div>
               <h1 className="font-semibold text-lg">SecureDoc</h1>
               <p className="text-xs text-muted-foreground font-mono" data-testid="text-user-phone">
-                {phoneNumber}
+                {user.phoneNumber}
               </p>
             </div>
           </div>
@@ -73,16 +80,20 @@ export default function ClientPortal({ phoneNumber, onLogout }: ClientPortalProp
             </p>
           </div>
 
-          {documents.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading your documents...</p>
+            </div>
+          ) : documents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {documents.map((doc) => (
                 <DocumentCard
-                  key={doc.id}
+                  key={doc._id}
                   fileName={doc.fileName}
                   uploadDate={doc.uploadDate}
                   fileSize={doc.fileSize}
-                  onDownload={() => console.log("Download:", doc.id)}
-                  onPreview={() => console.log("Preview:", doc.id)}
+                  onDownload={() => handleDownload(doc._id)}
+                  onPreview={() => handleDownload(doc._id)}
                   isAdmin={false}
                 />
               ))}

@@ -4,37 +4,62 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
+import { useToast } from "@/hooks/use-toast";
 import LoginForm from "@/components/LoginForm";
 import AdminDashboard from "@/pages/AdminDashboard";
 import ClientPortal from "@/pages/ClientPortal";
+import { login } from "@/lib/api";
+import type { User } from "@shared/schema";
 
-function App() {
-  const [user, setUser] = useState<{ phoneNumber: string; role: "admin" | "client" } | null>(null);
+function AppContent() {
+  const [user, setUser] = useState<User | null>(null);
+  const { toast } = useToast();
 
-  const handleLogin = (phoneNumber: string, password: string) => {
-    console.log("Login:", phoneNumber, password);
-    // todo: remove mock functionality - Replace with actual API call
-    // Mock login: +1111111111 = admin, anything else = client
-    const role = phoneNumber.includes("1111111111") ? "admin" : "client";
-    setUser({ phoneNumber, role });
+  const handleLogin = async (phoneNumber: string, password: string) => {
+    try {
+      const loggedInUser = await login(phoneNumber, password);
+      setUser(loggedInUser);
+      toast({
+        title: "Login successful",
+        description: `Welcome back!`,
+      });
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Invalid credentials",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
   };
 
+  return (
+    <>
+      {!user ? (
+        <LoginForm onLogin={handleLogin} />
+      ) : user.role === "admin" ? (
+        <AdminDashboard user={user} onLogout={handleLogout} />
+      ) : (
+        <ClientPortal user={user} onLogout={handleLogout} />
+      )}
+      <Toaster />
+    </>
+  );
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          {!user ? (
-            <LoginForm onLogin={handleLogin} />
-          ) : user.role === "admin" ? (
-            <AdminDashboard />
-          ) : (
-            <ClientPortal phoneNumber={user.phoneNumber} onLogout={handleLogout} />
-          )}
-          <Toaster />
+          <AppContent />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
