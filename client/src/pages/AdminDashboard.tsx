@@ -26,7 +26,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Shield } from "lucide-react";
-import { getDocuments, uploadDocument, deleteDocument, downloadDocument, previewDocument, updateAdminProfile } from "@/lib/api";
+import { getDocuments, uploadDocument, deleteDocument, downloadDocument, previewDocument, updateAdminProfile, getAllClients, type ClientWithCount } from "@/lib/api";
 import type { User, Document } from "@shared/schema";
 
 const menuItems = [
@@ -45,23 +45,28 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
   const [activeView, setActiveView] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [clients, setClients] = useState<ClientWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(user);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadDocuments();
+    loadData();
   }, []);
 
-  const loadDocuments = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const docs = await getDocuments();
+      const [docs, clientsData] = await Promise.all([
+        getDocuments(),
+        getAllClients()
+      ]);
       setDocuments(docs);
+      setClients(clientsData);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to load documents",
+        description: "Failed to load data",
         variant: "destructive",
       });
     } finally {
@@ -80,7 +85,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         title: "Success",
         description: "Document uploaded successfully",
       });
-      await loadDocuments();
+      await loadData();
       setActiveView("dashboard");
     } catch (error) {
       toast({
@@ -98,7 +103,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         title: "Success",
         description: "Document deleted successfully",
       });
-      await loadDocuments();
+      await loadData();
     } catch (error) {
       toast({
         title: "Delete failed",
@@ -206,9 +211,9 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <StatsCard
                     title="Total Clients"
-                    value={new Set(documents.map(d => d.clientPhoneNumber)).size}
+                    value={clients.length}
                     icon={Users}
-                    description="Unique clients"
+                    description="Registered clients"
                   />
                   <StatsCard
                     title="Documents"
