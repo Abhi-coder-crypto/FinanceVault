@@ -7,7 +7,7 @@ A secure document management system designed for finance companies to store and 
 **Frontend**: ✅ Fully functional with professional UI
 **Backend**: ✅ API routes implemented with MongoDB support
 **Authentication**: ✅ Phone number + password login
-**File Storage**: ⚠️ Local storage (temporary) - awaiting cloud storage integration
+**File Storage**: ✅ MongoDB GridFS (production-ready persistent storage)
 
 ## Current Setup
 
@@ -16,10 +16,16 @@ A secure document management system designed for finance companies to store and 
 1. **User Credentials & Document Metadata**: 
    - ✅ MongoDB connected and active
    - Environment variable `MONGODB_URI` is configured
+   - Document metadata stored in `documents` collection
    
 2. **Document Files**:
-   - Currently stored in `uploads/` directory (local file system)
-   - Ready for cloud storage migration (see Cloud Storage Integration below)
+   - ✅ **Production Mode (MongoDB)**: Files stored in MongoDB GridFS
+     - Automatic chunking for large files
+     - Persistent across deployments and republishing
+     - Streams files efficiently for downloads
+   - ✅ **Development Fallback (MemStorage)**: Files stored in `uploads/` directory
+     - Used when MongoDB is unavailable
+     - Provides local development experience
 
 ### Demo Access
 
@@ -129,24 +135,29 @@ To migrate your existing PDFs from cloud storage to this system:
 - ✅ Added admin settings page (update name, phone number, password)
 - ✅ MongoDB integration active and working
 - ✅ System now accepts document uploads for any client phone number
+- ✅ **GridFS Implementation**: Files now stored in MongoDB GridFS for persistence
+  - Automatic chunking for large files
+  - Survives deployments and republishing
+  - Proper error handling and cleanup
+  - Fallback to filesystem in development mode
 
 ## Next Steps
 
 1. ✅ Frontend design complete
 2. ✅ Backend API routes implemented
 3. ✅ MongoDB connected and active
-4. ⏳ **Migrate to cloud storage** - Move from local uploads/ to S3/Dropbox/GCS
-5. ⏳ **Import existing PDFs** - Bulk upload or reference existing cloud files
-6. ⏳ Deploy to production
+4. ✅ **GridFS file storage** - Production-ready persistent storage implemented
+5. 🎯 **Deploy to production** - Ready for deployment
 
 ## Development Notes
 
-- MongoDB is connected and storing user accounts and document metadata
-- Files are currently stored in local `uploads/` directory
+- MongoDB is connected and storing user accounts, document metadata, and files (via GridFS)
+- Files are stored in MongoDB GridFS in production, `uploads/` directory in development mode
 - Client existence check removed - any phone number can receive document uploads
 - Admin can update their profile through Settings page
 - System supports phone number-based authentication with secure password hashing
 - Frontend fully integrated with backend APIs
+- Proper error handling and cleanup for file uploads in both storage modes
 
 ## User Workflow
 
