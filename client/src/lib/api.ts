@@ -67,6 +67,38 @@ export async function uploadDocument(clientPhoneNumber: string, file: File): Pro
   return data.document;
 }
 
+export interface BatchUploadResult {
+  documents: Document[];
+  errors?: Array<{ fileName: string; error: string }>;
+  totalFiles: number;
+  successCount: number;
+  errorCount: number;
+}
+
+export async function uploadMultipleDocuments(
+  clientPhoneNumber: string,
+  files: File[]
+): Promise<BatchUploadResult> {
+  const formData = new FormData();
+  files.forEach(file => {
+    formData.append("files", file);
+  });
+  formData.append("clientPhoneNumber", clientPhoneNumber);
+
+  const response = await fetch(`${API_BASE}/documents/batch-upload`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Batch upload failed");
+  }
+
+  return await response.json();
+}
+
 export async function getDocuments(clientPhoneNumber?: string): Promise<Document[]> {
   const url = clientPhoneNumber
     ? `${API_BASE}/documents?clientPhoneNumber=${encodeURIComponent(clientPhoneNumber)}`

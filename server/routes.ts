@@ -212,6 +212,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Batch upload - multiple files for one client (supports up to 1000 files)
+  app.post("/api/documents/batch-upload", requireAdmin, upload.array("files", 1000), async (req, res) => {
+    try {
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        return res.status(400).json({ error: "No files uploaded" });
+      }
+
+      const { clientPhoneNumber } = req.body;
+      
+      if (!clientPhoneNumber) {
+        // Clean up all uploaded files
+        for (const file of req.files) {
+          try {
+            await fs.unlink(file.path);
+          } catch {}
+        }
+        return res.status(400).json({ error: "Client phone number is required" });
+      }
+
+      const uploadedDocuments = [];
+      const errors = [];
+
+      for (const file of req.files) {
+        let newPath = "";
+        try {
+          // Store file with original name in uploads directory
+          newPath = path.join("uploads", `${Date.now()}_${file.originalname}`);
+          await fs.rename(file.path, newPath);
+
+          const document = await storage.createDocument({
+            fileName: file.originalname,
+            clientPhoneNumber,
+            fileSize: file.size,
+            dropboxPath: newPath,
+            uploadedBy: req.session.userId!,
+          });
+
+          uploadedDocuments.push(document);
+        } catch (error) {
+          console.error(`Error uploading ${file.originalname}:`, error);
+          errors.push({ fileName: file.originalname, error: "Upload failed" });
+          // Clean up the file (use newPath if rename succeeded, file.path if it didn't)
+          try {
+            if (newPath) {
+              await fs.unlink(newPath);
+            } else {
+              await fs.unlink(file.path);
+            }
+          } catch (cleanupError) {
+            console.error(`Cleanup failed for ${file.originalname}:`, cleanupError);
+          }
+        }
+      }
+
+      res.json({ 
+        documents: uploadedDocuments,
+        errors: errors.length > 0 ? errors : undefined,
+        totalFiles: req.files.length,
+        successCount: uploadedDocuments.length,
+        errorCount: errors.length
+      });
+    } catch (error) {
+      console.error("Batch upload error:", error);
+      // Clean up any uploaded files
+      if (req.files && Array.isArray(req.files)) {
+        for (const file of req.files) {
+          try {
+            await fs.unlink(file.path);
+          } catch {}
+        }
+      }
+      res.status(500).json({ error: "Failed to upload documents" });
+    }
+  });
+
   app.get("/api/documents", requireAuth, async (req, res) => {
     try {
       const isAdmin = req.session.role === "admin";

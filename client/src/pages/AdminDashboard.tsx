@@ -9,6 +9,7 @@ import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
 import AdminSettingsForm from "@/components/AdminSettingsForm";
 import AllClients from "@/components/AllClients";
+import BulkUploadForm from "@/components/BulkUploadForm";
 import { useToast } from "@/hooks/use-toast";
 import adminBackground from "@assets/stock_images/professional_finance_dee7ec85.jpg";
 import {
@@ -296,13 +297,22 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             {activeView === "upload" && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-3xl font-bold" data-testid="text-page-title">Upload Document</h1>
+                  <h1 className="text-3xl font-bold" data-testid="text-page-title">Upload Documents</h1>
                   <p className="text-muted-foreground mt-1">
-                    Upload a new document for a client
+                    Upload documents for clients - single or bulk upload
                   </p>
                 </div>
-                <div className="max-w-2xl">
-                  <UploadDocumentForm onUpload={handleUpload} initialPhoneNumber={selectedPhoneNumber} />
+                
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <div>
+                    <h2 className="text-lg font-semibold mb-4">Single Upload</h2>
+                    <UploadDocumentForm onUpload={handleUpload} initialPhoneNumber={selectedPhoneNumber} />
+                  </div>
+                  
+                  <div>
+                    <h2 className="text-lg font-semibold mb-4">Bulk Upload</h2>
+                    <BulkUploadForm onComplete={loadData} />
+                  </div>
                 </div>
               </div>
             )}
