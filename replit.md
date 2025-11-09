@@ -110,6 +110,7 @@ To migrate your existing PDFs from cloud storage to this system:
 
 ### Admin
 - `PATCH /api/admin/profile` - Update admin profile (name, phone number, password)
+- `DELETE /api/clients/cleanup-invalid` - Remove all documents for invalid phone numbers (admin only)
 
 ## Technology Stack
 
@@ -131,6 +132,14 @@ To migrate your existing PDFs from cloud storage to this system:
 ## Recent Updates
 
 ### November 2025
+- ✅ **Phone Number Validation (Latest)**:
+  - Added comprehensive phone validation using libphonenumber-js across the entire app
+  - Backend: Both upload endpoints now validate phone numbers before accepting files
+  - Frontend: Bulk upload form validates folder names and rejects invalid phone numbers
+  - Admin UI: Invalid phone numbers (like "pdf") are visually flagged with warning icon and red badge
+  - Cleanup: Admin can delete all documents for invalid phone numbers with one click
+  - Security: Cleanup endpoint refuses to delete data for valid phone numbers
+  - Prevention: Future uploads with invalid phone numbers are blocked at upload time
 - ✅ Removed client pre-registration requirement for document uploads
 - ✅ Added admin settings page (update name, phone number, password)
 - ✅ **Migrated from GridFS to Filesystem Storage**: Files now stored in `/storage/clients/{phoneNumber}/` for VPS portability
@@ -163,6 +172,9 @@ To migrate your existing PDFs from cloud storage to this system:
 - System supports phone number-based authentication with secure password hashing
 - Frontend fully integrated with backend APIs
 - Proper error handling and cleanup for file uploads in both storage modes
+- **Phone Validation**: All phone numbers validated using libphonenumber-js standard
+  - Note: Test phone numbers like `+1111111111` may be flagged as invalid
+  - Recommendation: Use realistic phone numbers for testing (e.g., `+12125551234`)
 
 ## User Workflow
 
