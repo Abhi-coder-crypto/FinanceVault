@@ -26,35 +26,83 @@ export default function BulkUploadForm({ onComplete }: { onComplete?: () => void
   });
   const { toast } = useToast();
 
+  const extractFilesFromDirectory = async (entry: FileSystemDirectoryEntry): Promise<File[]> => {
+    const files: File[] = [];
+    const reader = entry.createReader();
+
+    const readEntries = (): Promise<FileSystemEntry[]> => {
+      return new Promise((resolve, reject) => {
+        reader.readEntries(resolve, reject);
+      });
+    };
+
+    // Keep reading until readEntries returns empty (handles >100 files)
+    let entries: FileSystemEntry[];
+    do {
+      entries = await readEntries();
+      
+      for (const entry of entries) {
+        if (entry.isFile) {
+          const fileEntry = entry as FileSystemFileEntry;
+          const file = await new Promise<File>((resolve, reject) => {
+            fileEntry.file(resolve, reject);
+          });
+          
+          if (file.type === 'application/pdf') {
+            files.push(file);
+          }
+        } else if (entry.isDirectory) {
+          const subFiles = await extractFilesFromDirectory(entry as FileSystemDirectoryEntry);
+          files.push(...subFiles);
+        }
+      }
+    } while (entries.length > 0);
+
+    return files;
+  };
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
-    const droppedFiles = Array.from(e.dataTransfer.files);
-    const pdfFiles = droppedFiles.filter(file => file.type === 'application/pdf');
+    const items = Array.from(e.dataTransfer.items);
+    const allPdfFiles: File[] = [];
 
-    if (pdfFiles.length === 0) {
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry();
+      
+      if (entry && entry.isDirectory) {
+        // Extract all PDFs from the folder
+        const dirEntry = entry as FileSystemDirectoryEntry;
+        const pdfFiles = await extractFilesFromDirectory(dirEntry);
+        allPdfFiles.push(...pdfFiles);
+      } else if (entry && entry.isFile) {
+        // Individual file dropped
+        const fileEntry = entry as FileSystemFileEntry;
+        const file = await new Promise<File>((resolve, reject) => {
+          fileEntry.file(resolve, reject);
+        });
+        
+        if (file.type === 'application/pdf') {
+          allPdfFiles.push(file);
+        }
+      }
+    }
+
+    if (allPdfFiles.length === 0) {
       toast({
         title: "No PDF files found",
-        description: "Please drop PDF files only",
+        description: "Please drop folders containing PDFs or PDF files directly",
         variant: "destructive",
       });
       return;
     }
 
-    setFiles(prev => [...prev, ...pdfFiles]);
+    setFiles(prev => [...prev, ...allPdfFiles]);
     toast({
       title: "Files added",
-      description: `Added ${pdfFiles.length} PDF file(s)`,
+      description: `Added ${allPdfFiles.length} PDF file(s)`,
     });
-
-    if (pdfFiles.length < droppedFiles.length) {
-      toast({
-        title: "Some files skipped",
-        description: `${droppedFiles.length - pdfFiles.length} non-PDF file(s) were skipped`,
-        variant: "destructive",
-      });
-    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -171,7 +219,7 @@ export default function BulkUploadForm({ onComplete }: { onComplete?: () => void
       <CardHeader>
         <CardTitle>Bulk Upload - Multiple PDFs</CardTitle>
         <CardDescription>
-          Upload multiple PDF files for one client. Enter the phone number and drag/drop files.
+          Upload multiple PDFs for one client. Enter phone number and drag folders or files with any name.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -198,10 +246,10 @@ export default function BulkUploadForm({ onComplete }: { onComplete?: () => void
         >
           <FileText className={`h-10 w-10 mx-auto mb-3 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
           <h3 className="text-base font-semibold mb-2">
-            {isDragging ? 'Drop PDF files here' : 'Drag & drop PDF files'}
+            {isDragging ? 'Drop folders or files here' : 'Drag & drop folders or PDF files'}
           </h3>
           <p className="text-sm text-muted-foreground mb-3">
-            or click to browse
+            Accepts folders containing PDFs or individual PDF files
           </p>
           <input
             type="file"
