@@ -8,6 +8,7 @@ import UploadDocumentForm from "@/components/UploadDocumentForm";
 import EmptyState from "@/components/EmptyState";
 import ThemeToggle from "@/components/ThemeToggle";
 import AdminSettingsForm from "@/components/AdminSettingsForm";
+import AllClients from "@/components/AllClients";
 import { useToast } from "@/hooks/use-toast";
 import adminBackground from "@assets/stock_images/professional_finance_dee7ec85.jpg";
 import {
@@ -296,10 +297,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                     View and manage all client accounts
                   </p>
                 </div>
-                <EmptyState
-                  message="Client management"
-                  description="This feature will be implemented in the next phase"
-                />
+                <AllClients />
               </div>
             )}
 

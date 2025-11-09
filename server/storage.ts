@@ -3,10 +3,13 @@ import { getDatabase } from "./db";
 import bcrypt from "bcryptjs";
 import { ObjectId } from "mongodb";
 
+export type UserWithoutPassword = Omit<User, 'password'>;
+
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined>;
+  getAllClients(): Promise<UserWithoutPassword[]>;
   createUser(user: InsertUser): Promise<User>;
   verifyPassword(phoneNumber: string, password: string): Promise<User | null>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
@@ -32,6 +35,12 @@ class MemStorage implements IStorage {
 
   async getUserByPhoneNumber(phoneNumber: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(u => u.phoneNumber === phoneNumber);
+  }
+
+  async getAllClients(): Promise<UserWithoutPassword[]> {
+    return Array.from(this.users.values())
+      .filter(u => u.role === 'client')
+      .map(({ password, ...user }) => user);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -133,6 +142,23 @@ class MongoStorage implements IStorage {
       role: user.role,
       name: user.name,
     };
+  }
+
+  async getAllClients(): Promise<UserWithoutPassword[]> {
+    const db = await getDatabase();
+    if (!db) throw new Error("Database not available");
+    
+    const users = await db.collection('users')
+      .find({ role: 'client' })
+      .sort({ phoneNumber: 1 })
+      .toArray();
+    
+    return users.map(user => ({
+      _id: user._id.toString(),
+      phoneNumber: user.phoneNumber,
+      role: user.role,
+      name: user.name,
+    }));
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -312,6 +338,9 @@ export const storage = {
   },
   async getUserByPhoneNumber(phoneNumber: string) {
     return (await getStorage()).getUserByPhoneNumber(phoneNumber);
+  },
+  async getAllClients() {
+    return (await getStorage()).getAllClients();
   },
   async createUser(user: InsertUser) {
     return (await getStorage()).createUser(user);

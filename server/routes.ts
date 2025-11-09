@@ -111,6 +111,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all clients with document counts (admin only)
+  app.get("/api/clients", requireAdmin, async (req, res) => {
+    try {
+      const clients = await storage.getAllClients();
+      const documents = await storage.getAllDocuments();
+      
+      // Calculate document count for each client server-side
+      const clientsWithCounts = clients.map(client => {
+        const documentCount = documents.filter(
+          doc => doc.clientPhoneNumber === client.phoneNumber
+        ).length;
+        return {
+          _id: client._id,
+          phoneNumber: client.phoneNumber,
+          role: client.role,
+          name: client.name,
+          documentCount,
+        };
+      });
+      
+      res.json({ clients: clientsWithCounts });
+    } catch (error) {
+      console.error("Get clients error:", error);
+      res.status(500).json({ error: "Failed to fetch clients" });
+    }
+  });
+
   // Update admin profile
   app.patch("/api/admin/profile", requireAdmin, async (req, res) => {
     try {

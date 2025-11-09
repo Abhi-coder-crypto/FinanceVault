@@ -121,3 +121,21 @@ export async function updateAdminProfile(data: { name?: string; phoneNumber?: st
   const result = await response.json();
   return result.user;
 }
+
+export interface ClientWithCount extends Omit<User, 'password'> {
+  documentCount: number;
+}
+
+export async function getAllClients(): Promise<ClientWithCount[]> {
+  const response = await fetch(`${API_BASE}/clients`, {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Failed to fetch clients");
+  }
+
+  const data = await response.json();
+  return data.clients;
+}
