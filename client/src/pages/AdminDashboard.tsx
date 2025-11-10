@@ -280,7 +280,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
                 <div className="space-y-5">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-bold tracking-tight">Documents by Client</h2>
+                    <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">Documents by Client</h2>
                   </div>
 
                   {loading ? (
@@ -301,10 +301,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             )}
 
             {activeView === "upload" && (
-              <div className="space-y-8 max-w-6xl mx-auto">
+              <div className="space-y-8 max-w-6xl mx-auto relative">
                 <div className="space-y-3">
-                  <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">Upload Documents</h1>
-                  <p className="text-base text-muted-foreground">
+                  <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" data-testid="text-page-title">Upload Documents</h1>
+                  <p className="text-lg text-slate-300">
                     Upload documents for clients - single or bulk upload
                   </p>
                 </div>
@@ -331,12 +331,12 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                 
                 <div className="grid gap-6 lg:grid-cols-2">
                   <div>
-                    <h2 className="text-lg font-semibold mb-4">Single File Upload</h2>
+                    <h2 className="text-lg font-semibold mb-4 text-slate-200">Single File Upload</h2>
                     <UploadDocumentForm onUpload={handleUpload} phoneNumber={selectedPhoneNumber || ""} />
                   </div>
                   
                   <div>
-                    <h2 className="text-lg font-semibold mb-4">Multiple Files Upload</h2>
+                    <h2 className="text-lg font-semibold mb-4 text-slate-200">Multiple Files Upload</h2>
                     <BulkUploadForm onComplete={loadData} phoneNumber={selectedPhoneNumber || ""} />
                   </div>
                 </div>
@@ -344,10 +344,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             )}
 
             {activeView === "clients" && (
-              <div className="space-y-8 max-w-7xl mx-auto">
+              <div className="space-y-8 max-w-7xl mx-auto relative">
                 <div className="space-y-3">
-                  <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">All Clients</h1>
-                  <p className="text-base text-muted-foreground">
+                  <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" data-testid="text-page-title">All Clients</h1>
+                  <p className="text-lg text-slate-300">
                     View and manage all client accounts
                   </p>
                 </div>
@@ -356,10 +356,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             )}
 
             {activeView === "settings" && (
-              <div className="space-y-8 max-w-3xl mx-auto">
+              <div className="space-y-8 max-w-3xl mx-auto relative">
                 <div className="space-y-3">
-                  <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">Settings</h1>
-                  <p className="text-base text-muted-foreground">
+                  <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" data-testid="text-page-title">Settings</h1>
+                  <p className="text-lg text-slate-300">
                     Configure your account and preferences
                   </p>
                 </div>
