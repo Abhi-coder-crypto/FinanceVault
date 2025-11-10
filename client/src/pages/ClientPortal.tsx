@@ -55,31 +55,34 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
-      {/* Professional finance background */}
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950">
+      {/* Sophisticated background overlay */}
+      <div className="fixed inset-0 bg-gradient-to-br from-emerald-950/20 via-transparent to-amber-950/10 pointer-events-none" />
       <div 
-        className="fixed inset-0 bg-cover bg-center opacity-5 dark:opacity-[0.03] pointer-events-none -z-10"
+        className="fixed inset-0 bg-cover bg-center opacity-[0.02] pointer-events-none"
         style={{ backgroundImage: `url(${clientBackground})` }}
       />
-      <header className="border-b sticky top-0 backdrop-blur-sm bg-background/95 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-primary" />
+      
+      <header className="border-b border-emerald-900/20 sticky top-0 backdrop-blur-xl bg-slate-900/80 z-10 shadow-xl shadow-black/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-600/30 via-emerald-700/20 to-amber-600/30 flex items-center justify-center ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-900/50">
+              <Shield className="h-7 w-7 text-emerald-400" />
             </div>
             <div>
-              <h1 className="font-semibold text-lg">SecureDoc</h1>
-              <p className="text-xs text-muted-foreground font-mono" data-testid="text-user-phone">
+              <h1 className="font-bold text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">SecureDoc</h1>
+              <p className="text-xs text-slate-400 font-mono" data-testid="text-user-phone">
                 {user.phoneNumber}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <ThemeToggle />
             <Button
               variant="ghost"
               onClick={onLogout}
               data-testid="button-logout"
+              className="text-slate-300 hover:text-emerald-400 hover:bg-emerald-950/30 transition-colors"
             >
               <LogOut className="h-4 w-4 mr-2" />
               Logout
@@ -88,30 +91,32 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
-        <div className="space-y-8">
-          <div className="space-y-3">
-            <h2 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">My Documents</h2>
-            <p className="text-base text-muted-foreground">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-0">
+        <div className="space-y-10">
+          <div className="space-y-4">
+            <h2 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" data-testid="text-page-title">
+              My Documents
+            </h2>
+            <p className="text-lg text-slate-300 max-w-2xl">
               View and download your financial documents securely
             </p>
             {!loading && documents.length > 0 && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
-                <FileText className="h-4 w-4" />
-                <span className="font-medium">{documents.length} {documents.length === 1 ? 'document' : 'documents'} available</span>
+              <div className="flex items-center gap-2 text-base text-emerald-400 pt-2">
+                <FileText className="h-5 w-5" />
+                <span className="font-semibold">{documents.length} {documents.length === 1 ? 'document' : 'documents'} available</span>
               </div>
             )}
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 animate-pulse">
-                <Shield className="h-8 w-8 text-primary" />
+            <div className="flex flex-col items-center justify-center py-24">
+              <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-emerald-600/20 to-amber-600/20 flex items-center justify-center mb-6 animate-pulse ring-4 ring-emerald-500/20">
+                <Shield className="h-10 w-10 text-emerald-400" />
               </div>
-              <p className="text-base text-muted-foreground font-medium">Loading your documents...</p>
+              <p className="text-lg text-slate-300 font-medium">Loading your documents...</p>
             </div>
           ) : documents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {documents.map((doc) => (
                 <DocumentCard
                   key={doc._id}
@@ -125,7 +130,7 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
               ))}
             </div>
           ) : (
-            <div className="py-16">
+            <div className="py-20">
               <EmptyState
                 message="No documents yet"
                 description="Your documents will appear here once uploaded by your financial advisor"

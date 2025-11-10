@@ -113,28 +113,32 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${financeBackground})` }}
       />
-      {/* Dark overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 via-slate-900/92 to-blue-950/90" />
+      {/* Sophisticated dark overlay with gold accents */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-gray-900/97 to-slate-950/95" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-950/20 via-transparent to-amber-950/20" />
       
-      <Card className="w-full max-w-[480px] relative z-10 shadow-2xl border-none backdrop-blur-md bg-card/98">
-        <CardHeader className="space-y-6 text-center pb-8">
+      <Card className="w-full max-w-[480px] relative z-10 shadow-2xl border-2 border-amber-900/20 backdrop-blur-xl bg-gradient-to-b from-slate-900/95 to-slate-950/95">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-amber-500/5 rounded-lg" />
+        <CardHeader className="space-y-6 text-center pb-8 relative">
           <div className="flex justify-center">
-            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-4 ring-primary/5">
-              <Shield className="h-10 w-10 text-primary" />
+            <div className="h-24 w-24 rounded-3xl bg-gradient-to-br from-emerald-600/30 via-emerald-700/20 to-amber-600/30 flex items-center justify-center ring-4 ring-emerald-500/20 shadow-xl shadow-emerald-900/50">
+              <Shield className="h-12 w-12 text-emerald-400" />
             </div>
           </div>
           <div className="space-y-3">
-            <CardTitle className="text-3xl font-bold tracking-tight">SecureDoc</CardTitle>
-            <CardDescription className="text-base">
+            <CardTitle className="text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-400 bg-clip-text text-transparent">
+              SecureDoc
+            </CardTitle>
+            <CardDescription className="text-base text-slate-300">
               Your financial documents, securely managed
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent className="px-8 pb-8">
+        <CardContent className="px-8 pb-8 relative">
           <Tabs value={mode} onValueChange={(v) => setMode(v as "login" | "register")} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
-              <TabsTrigger value="login" data-testid="tab-login" className="text-sm font-medium">Login</TabsTrigger>
-              <TabsTrigger value="register" data-testid="tab-register" className="text-sm font-medium">Register</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 h-12 bg-slate-800/50 border border-emerald-900/30">
+              <TabsTrigger value="login" data-testid="tab-login" className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white">Login</TabsTrigger>
+              <TabsTrigger value="register" data-testid="tab-register" className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600 data-[state=active]:text-white">Register</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -175,16 +179,16 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full h-11 text-base font-semibold" data-testid="button-login-submit">
+                <Button type="submit" className="w-full h-11 text-base font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-900/50" data-testid="button-login-submit">
                   Sign In
                 </Button>
                 
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-center text-sm text-slate-400">
                   New user?{" "}
                   <button
                     type="button"
                     onClick={() => setMode("register")}
-                    className="text-primary hover:underline font-medium"
+                    className="text-emerald-400 hover:text-emerald-300 hover:underline font-medium transition-colors"
                     data-testid="link-switch-to-register"
                   >
                     Register here
@@ -195,9 +199,9 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             
             <TabsContent value="register">
               <form onSubmit={handleSubmit} className="space-y-5">
-                <Alert className="bg-primary/5 border-primary/20">
-                  <AlertDescription className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">Phone Number Format:</strong> Include country code (e.g., +1 for US, +44 for UK, +91 for India)
+                <Alert className="bg-emerald-950/30 border-emerald-800/30">
+                  <AlertDescription className="text-sm text-slate-300">
+                    <strong className="text-emerald-400">Phone Number Format:</strong> Include country code (e.g., +1 for US, +44 for UK, +91 for India)
                   </AlertDescription>
                 </Alert>
 
@@ -289,19 +293,19 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
                 <Button 
                   type="submit" 
-                  className="w-full h-11 text-base font-semibold"
+                  className="w-full h-11 text-base font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg shadow-emerald-900/50"
                   disabled={isSubmitting || (mode === "register" && !allPasswordRequirementsMet)}
                   data-testid="button-register-submit"
                 >
                   {isSubmitting ? "Creating Account..." : "Create Account"}
                 </Button>
                 
-                <div className="text-center text-sm text-muted-foreground">
+                <div className="text-center text-sm text-slate-400">
                   Already registered?{" "}
                   <button
                     type="button"
                     onClick={() => setMode("login")}
-                    className="text-primary hover:underline font-medium"
+                    className="text-emerald-400 hover:text-emerald-300 hover:underline font-medium transition-colors"
                     data-testid="link-switch-to-login"
                   >
                     Login here

@@ -177,15 +177,15 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           className="absolute inset-0 bg-cover bg-center opacity-5 dark:opacity-[0.03]"
           style={{ backgroundImage: `url(${adminBackground})` }}
         />
-        <Sidebar className="relative z-10">
+        <Sidebar className="relative z-10 border-r border-emerald-900/20">
           <SidebarHeader className="p-6">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-primary" />
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-600/30 via-emerald-700/20 to-amber-600/30 flex items-center justify-center ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-900/50">
+                <Shield className="h-7 w-7 text-emerald-400" />
               </div>
               <div>
-                <h2 className="font-semibold text-lg">SecureDoc</h2>
-                <p className="text-xs text-muted-foreground">Admin Portal</p>
+                <h2 className="font-bold text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">SecureDoc</h2>
+                <p className="text-xs text-slate-400">Admin Portal</p>
               </div>
             </div>
           </SidebarHeader>
@@ -210,10 +210,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="p-4">
+          <SidebarFooter className="p-4 border-t border-emerald-900/20">
             <Button
               variant="ghost"
-              className="w-full justify-start"
+              className="w-full justify-start text-slate-300 hover:text-emerald-400 hover:bg-emerald-950/30"
               onClick={onLogout}
               data-testid="button-logout"
             >
@@ -224,23 +224,24 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         </Sidebar>
 
         <div className="flex flex-col flex-1 overflow-hidden relative z-10">
-          <header className="border-b p-4 flex items-center justify-between backdrop-blur-sm bg-background/95">
+          <header className="border-b border-emerald-900/20 p-4 flex items-center justify-between backdrop-blur-xl bg-slate-900/80 shadow-lg shadow-black/10">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
 
-          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-background/80 backdrop-blur-sm">
+          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-gradient-to-br from-slate-950/50 via-gray-900/50 to-slate-950/50 backdrop-blur-sm relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/10 via-transparent to-amber-950/5 pointer-events-none" />
             {activeView === "dashboard" && (
-              <div className="space-y-8 max-w-7xl mx-auto">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="space-y-8 max-w-7xl mx-auto relative">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
-                      <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">Dashboard</h1>
-                      <p className="text-base text-muted-foreground mt-2">
+                      <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" data-testid="text-page-title">Dashboard</h1>
+                      <p className="text-lg text-slate-300 mt-3">
                         Manage client documents and track uploads
                       </p>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-emerald-400 font-semibold bg-slate-900/50 px-4 py-2 rounded-lg border border-emerald-900/30">
                       {new Date().toLocaleDateString('en-US', { 
                         weekday: 'long', 
                         year: 'numeric', 
