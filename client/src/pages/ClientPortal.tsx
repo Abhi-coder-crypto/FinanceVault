@@ -55,9 +55,9 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Sophisticated background overlay */}
-      <div className="fixed inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-amber-500/5 pointer-events-none" />
+      <div className="fixed inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-amber-500/10 pointer-events-none" />
       <div 
         className="fixed inset-0 bg-cover bg-center opacity-[0.02] pointer-events-none"
         style={{ backgroundImage: `url(${clientBackground})` }}
