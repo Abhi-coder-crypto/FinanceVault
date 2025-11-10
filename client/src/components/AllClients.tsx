@@ -10,12 +10,12 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 
 interface AllClientsProps {
   onClientClick?: (phoneNumber: string) => void;
+  searchQuery?: string;
 }
 
-export default function AllClients({ onClientClick }: AllClientsProps) {
+export default function AllClients({ onClientClick, searchQuery = "" }: AllClientsProps) {
   const [clients, setClients] = useState<ClientWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,23 +101,7 @@ export default function AllClients({ onClientClick }: AllClientsProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="flex items-center justify-end">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search by name or phone number..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-            data-testid="input-search-clients"
-          />
-        </div>
-      </div>
-
-      {/* Client Cards */}
+    <>
       {filteredClients.length === 0 ? (
         <div className="text-center py-12">
           <div className="h-16 w-16 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
@@ -198,6 +182,6 @@ export default function AllClients({ onClientClick }: AllClientsProps) {
           })}
         </div>
       )}
-    </div>
+    </>
   );
 }

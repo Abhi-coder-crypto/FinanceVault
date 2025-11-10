@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, FileText, Upload, LogOut, Home, Settings } from "lucide-react";
+import { Users, FileText, Upload, LogOut, Home, Settings, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
   const [activeView, setActiveView] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+  const [clientSearchQuery, setClientSearchQuery] = useState("");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [clients, setClients] = useState<ClientWithCount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -346,13 +347,26 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
 
             {activeView === "clients" && (
               <div className="space-y-8 max-w-7xl mx-auto relative">
-                <div className="space-y-3">
-                  <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" data-testid="text-page-title">All Clients</h1>
-                  <p className="text-lg text-slate-300">
-                    View and manage all client accounts
-                  </p>
+                <div className="flex items-center justify-between gap-6 flex-wrap">
+                  <div className="space-y-3">
+                    <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent" data-testid="text-page-title">All Clients</h1>
+                    <p className="text-lg text-slate-300">
+                      View and manage all client accounts
+                    </p>
+                  </div>
+                  <div className="relative w-full md:w-96">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search by name or phone number..."
+                      value={clientSearchQuery}
+                      onChange={(e) => setClientSearchQuery(e.target.value)}
+                      className="pl-9"
+                      data-testid="input-search-clients"
+                    />
+                  </div>
                 </div>
-                <AllClients onClientClick={handleClientClick} />
+                <AllClients onClientClick={handleClientClick} searchQuery={clientSearchQuery} />
               </div>
             )}
 
