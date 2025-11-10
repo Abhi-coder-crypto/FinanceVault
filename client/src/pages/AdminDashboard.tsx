@@ -178,7 +178,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           className="absolute inset-0 bg-cover bg-center opacity-5 dark:opacity-[0.03]"
           style={{ backgroundImage: `url(${adminBackground})` }}
         />
-        <Sidebar collapsible="icon" className="relative z-10 border-r border-border bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95">
+        <Sidebar collapsible="offcanvas" className="relative z-10 border-r border-border bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95">
           <SidebarHeader className="p-6 border-b border-border/50">
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-emerald-600/20 flex items-center justify-center ring-2 ring-emerald-500/30 shadow-xl shadow-emerald-900/30">
