@@ -210,10 +210,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-emerald-900/20">
+          <SidebarFooter className="p-4 border-t border-sidebar-border">
             <Button
               variant="ghost"
-              className="w-full justify-start text-slate-300 hover:text-emerald-400 hover:bg-emerald-950/30"
+              className="w-full justify-start text-sidebar-foreground hover:text-emerald-400"
               onClick={onLogout}
               data-testid="button-logout"
             >
