@@ -82,9 +82,9 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
               variant="ghost"
               onClick={onLogout}
               data-testid="button-logout"
-              className="text-foreground hover:text-emerald-400 transition-colors"
+              className="text-slate-200 hover:text-emerald-400 transition-colors font-medium"
             >
-              <LogOut className="h-4 w-4 mr-2" />
+              <LogOut className="h-5 w-5 mr-2" />
               Logout
             </Button>
           </div>
