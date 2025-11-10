@@ -177,31 +177,32 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           className="absolute inset-0 bg-cover bg-center opacity-5 dark:opacity-[0.03]"
           style={{ backgroundImage: `url(${adminBackground})` }}
         />
-        <Sidebar className="relative z-10 border-r border-emerald-900/20">
-          <SidebarHeader className="p-6">
+        <Sidebar className="relative z-10 border-r border-border bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95">
+          <SidebarHeader className="p-6 border-b border-border/50">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-600/30 via-emerald-700/20 to-amber-600/30 flex items-center justify-center ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-900/50">
-                <Shield className="h-7 w-7 text-emerald-400" />
+              <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-teal-500/10 to-emerald-600/20 flex items-center justify-center ring-2 ring-emerald-500/30 shadow-xl shadow-emerald-900/30">
+                <Shield className="h-8 w-8 text-emerald-500 dark:text-emerald-400" />
               </div>
               <div>
-                <h2 className="font-bold text-xl bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">SecureDoc</h2>
-                <p className="text-xs text-slate-400">Admin Portal</p>
+                <h2 className="font-bold text-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 bg-clip-text text-transparent">SecureDoc</h2>
+                <p className="text-xs text-muted-foreground font-medium">Admin Portal</p>
               </div>
             </div>
           </SidebarHeader>
-          <SidebarContent>
+          <SidebarContent className="px-3 py-4">
             <SidebarGroup>
-              <SidebarGroupLabel>Menu</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-2 mb-2">Navigation</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="gap-1">
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
                         onClick={() => handleMenuClick(item.id)}
                         isActive={activeView === item.id}
                         data-testid={`button-nav-${item.id}`}
+                        className="data-[active=true]:bg-emerald-500/10 data-[active=true]:text-emerald-600 dark:data-[active=true]:text-emerald-400 data-[active=true]:font-semibold hover:bg-accent transition-all duration-200"
                       >
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className="h-5 w-5" />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -213,7 +214,7 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
           <SidebarFooter className="p-4 border-t border-sidebar-border">
             <Button
               variant="ghost"
-              className="w-full justify-start text-sidebar-foreground hover:text-emerald-400"
+              className="w-full justify-start text-foreground dark:text-slate-200 hover:text-emerald-500 dark:hover:text-emerald-400"
               onClick={onLogout}
               data-testid="button-logout"
             >
