@@ -229,8 +229,8 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             <ThemeToggle />
           </header>
 
-          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 backdrop-blur-sm relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-amber-500/5 pointer-events-none" />
+          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 backdrop-blur-sm relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-amber-500/10 pointer-events-none" />
             {activeView === "dashboard" && (
               <div className="space-y-8 max-w-7xl mx-auto relative">
                 <div className="space-y-4">
