@@ -224,13 +224,13 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         </Sidebar>
 
         <div className="flex flex-col flex-1 overflow-hidden relative z-10">
-          <header className="border-b border-emerald-900/20 p-4 flex items-center justify-between backdrop-blur-xl bg-slate-900/80 shadow-lg shadow-black/10">
+          <header className="border-b border-emerald-500/20 p-4 flex items-center justify-between backdrop-blur-xl bg-gradient-to-r from-slate-950/95 via-emerald-950/30 to-slate-950/95 shadow-lg shadow-emerald-900/10">
             <SidebarTrigger data-testid="button-sidebar-toggle" />
             <ThemeToggle />
           </header>
 
-          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-gradient-to-br from-slate-950/50 via-gray-900/50 to-slate-950/50 backdrop-blur-sm relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/10 via-transparent to-amber-950/5 pointer-events-none" />
+          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 backdrop-blur-sm relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-amber-500/5 pointer-events-none" />
             {activeView === "dashboard" && (
               <div className="space-y-8 max-w-7xl mx-auto relative">
                 <div className="space-y-4">
