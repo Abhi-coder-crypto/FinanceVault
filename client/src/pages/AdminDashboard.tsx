@@ -224,8 +224,8 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
         </Sidebar>
 
         <div className="flex flex-col flex-1 overflow-hidden relative z-10">
-          <header className="border-b border-emerald-500/20 p-4 flex items-center justify-between backdrop-blur-xl bg-gradient-to-r from-slate-950/95 via-emerald-950/30 to-slate-950/95 shadow-lg shadow-emerald-900/10">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
+          <header className="border-b border-emerald-500/20 p-4 flex items-center justify-between backdrop-blur-xl bg-slate-800/90 shadow-lg shadow-emerald-900/10">
+            <SidebarTrigger data-testid="button-sidebar-toggle" className="text-slate-200 hover:text-emerald-400" />
             <ThemeToggle />
           </header>
 

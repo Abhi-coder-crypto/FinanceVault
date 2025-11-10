@@ -63,7 +63,7 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
         style={{ backgroundImage: `url(${clientBackground})` }}
       />
       
-      <header className="border-b border-emerald-500/20 sticky top-0 backdrop-blur-xl bg-gradient-to-r from-slate-950/95 via-emerald-950/30 to-slate-950/95 z-10 shadow-xl shadow-emerald-900/10">
+      <header className="border-b border-emerald-500/20 sticky top-0 backdrop-blur-xl bg-slate-800/90 z-10 shadow-xl shadow-emerald-900/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-600/30 via-emerald-700/20 to-amber-600/30 flex items-center justify-center ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-900/50">
