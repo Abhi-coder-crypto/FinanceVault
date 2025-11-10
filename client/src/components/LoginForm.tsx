@@ -114,46 +114,46 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         style={{ backgroundImage: `url(${financeBackground})` }}
       />
       {/* Dark overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/85 via-slate-900/90 to-blue-950/85" />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 via-slate-900/92 to-blue-950/90" />
       
-      <Card className="w-full max-w-md relative z-10 shadow-2xl border-none backdrop-blur-sm bg-card/95">
-        <CardHeader className="space-y-4 text-center pb-6">
+      <Card className="w-full max-w-[480px] relative z-10 shadow-2xl border-none backdrop-blur-md bg-card/98">
+        <CardHeader className="space-y-6 text-center pb-8">
           <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Shield className="h-8 w-8 text-primary" />
+            <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center ring-4 ring-primary/5">
+              <Shield className="h-10 w-10 text-primary" />
             </div>
           </div>
-          <div>
-            <CardTitle className="text-2xl">SecureDoc</CardTitle>
-            <CardDescription className="mt-2">
-              Access your financial documents securely
+          <div className="space-y-3">
+            <CardTitle className="text-3xl font-bold tracking-tight">SecureDoc</CardTitle>
+            <CardDescription className="text-base">
+              Your financial documents, securely managed
             </CardDescription>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-8 pb-8">
           <Tabs value={mode} onValueChange={(v) => setMode(v as "login" | "register")} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="login" data-testid="tab-login">Login</TabsTrigger>
-              <TabsTrigger value="register" data-testid="tab-register">Register</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
+              <TabsTrigger value="login" data-testid="tab-login" className="text-sm font-medium">Login</TabsTrigger>
+              <TabsTrigger value="register" data-testid="tab-register" className="text-sm font-medium">Register</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-phone" data-testid="label-login-phone">Phone Number</Label>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2.5">
+                  <Label htmlFor="login-phone" data-testid="label-login-phone" className="text-sm font-semibold">Phone Number</Label>
                   <Input
                     id="login-phone"
                     type="tel"
                     placeholder="+1 (555) 000-0000"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="font-mono"
+                    className="font-mono h-11"
                     data-testid="input-login-phone"
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="login-password" data-testid="label-login-password">Password</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="login-password" data-testid="label-login-password" className="text-sm font-semibold">Password</Label>
                   <div className="relative">
                     <Input
                       id="login-password"
@@ -162,19 +162,20 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       data-testid="input-login-password"
+                      className="h-11 pr-10"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       data-testid="button-toggle-password"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" data-testid="button-login-submit">
+                <Button type="submit" className="w-full h-11 text-base font-semibold" data-testid="button-login-submit">
                   Sign In
                 </Button>
                 
@@ -193,15 +194,15 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             </TabsContent>
             
             <TabsContent value="register">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Alert>
-                  <AlertDescription className="text-sm">
-                    <strong>Phone Number Format:</strong> Include country code (e.g., +1 for US, +44 for UK, +91 for India)
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <Alert className="bg-primary/5 border-primary/20">
+                  <AlertDescription className="text-sm text-muted-foreground">
+                    <strong className="text-foreground">Phone Number Format:</strong> Include country code (e.g., +1 for US, +44 for UK, +91 for India)
                   </AlertDescription>
                 </Alert>
 
-                <div className="space-y-2">
-                  <Label htmlFor="register-name" data-testid="label-register-name">Name (Optional)</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="register-name" data-testid="label-register-name" className="text-sm font-semibold">Name (Optional)</Label>
                   <Input
                     id="register-name"
                     type="text"
@@ -209,11 +210,12 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     data-testid="input-register-name"
+                    className="h-11"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="register-phone" data-testid="label-register-phone">Phone Number *</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="register-phone" data-testid="label-register-phone" className="text-sm font-semibold">Phone Number *</Label>
                   <Input
                     id="register-phone"
                     type="tel"
@@ -224,7 +226,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                       if (phoneError) setPhoneError("");
                     }}
                     onBlur={handlePhoneBlur}
-                    className={`font-mono ${phoneError ? "border-red-500" : ""}`}
+                    className={`font-mono h-11 ${phoneError ? "border-red-500" : ""}`}
                     data-testid="input-register-phone"
                     required
                   />
@@ -240,8 +242,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="register-password" data-testid="label-register-password">Password *</Label>
+                <div className="space-y-2.5">
+                  <Label htmlFor="register-password" data-testid="label-register-password" className="text-sm font-semibold">Password *</Label>
                   <div className="relative">
                     <Input
                       id="register-password"
@@ -250,12 +252,13 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       data-testid="input-register-password"
+                      className="h-11 pr-10"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                       data-testid="button-toggle-register-password"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -263,8 +266,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                   </div>
                   
                   {password && (
-                    <div className="mt-2 space-y-1 text-sm" data-testid="password-requirements-list">
-                      <p className="font-medium text-muted-foreground">Password Requirements:</p>
+                    <div className="mt-3 space-y-2 text-sm p-3 rounded-lg bg-muted/50" data-testid="password-requirements-list">
+                      <p className="font-semibold text-foreground text-xs uppercase tracking-wide">Password Requirements:</p>
                       {passwordRequirements.map((req, idx) => {
                         const isMet = req.test(password);
                         return (
@@ -286,7 +289,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
                 <Button 
                   type="submit" 
-                  className="w-full"
+                  className="w-full h-11 text-base font-semibold"
                   disabled={isSubmitting || (mode === "register" && !allPasswordRequirementsMet)}
                   data-testid="button-register-submit"
                 >

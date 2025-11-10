@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import DocumentCard from "@/components/DocumentCard";
 import EmptyState from "@/components/EmptyState";
@@ -88,21 +88,30 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 relative z-0">
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-semibold" data-testid="text-page-title">My Documents</h2>
-            <p className="text-muted-foreground mt-1">
-              View and download your financial documents
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
+        <div className="space-y-8">
+          <div className="space-y-3">
+            <h2 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">My Documents</h2>
+            <p className="text-base text-muted-foreground">
+              View and download your financial documents securely
             </p>
+            {!loading && documents.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                <FileText className="h-4 w-4" />
+                <span className="font-medium">{documents.length} {documents.length === 1 ? 'document' : 'documents'} available</span>
+              </div>
+            )}
           </div>
 
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Loading your documents...</p>
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 animate-pulse">
+                <Shield className="h-8 w-8 text-primary" />
+              </div>
+              <p className="text-base text-muted-foreground font-medium">Loading your documents...</p>
             </div>
           ) : documents.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {documents.map((doc) => (
                 <DocumentCard
                   key={doc._id}
@@ -116,10 +125,12 @@ export default function ClientPortal({ user, onLogout }: ClientPortalProps) {
               ))}
             </div>
           ) : (
-            <EmptyState
-              message="No documents yet"
-              description="Your documents will appear here once uploaded by your financial advisor"
-            />
+            <div className="py-16">
+              <EmptyState
+                message="No documents yet"
+                description="Your documents will appear here once uploaded by your financial advisor"
+              />
+            </div>
           )}
         </div>
       </main>

@@ -229,28 +229,40 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             <ThemeToggle />
           </header>
 
-          <main className="flex-1 overflow-auto p-6 bg-background/80 backdrop-blur-sm">
+          <main className="flex-1 overflow-auto p-6 lg:p-8 bg-background/80 backdrop-blur-sm">
             {activeView === "dashboard" && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold" data-testid="text-page-title">Dashboard</h1>
-                  <p className="text-muted-foreground mt-1">
-                    Manage client documents and track uploads
-                  </p>
+              <div className="space-y-8 max-w-7xl mx-auto">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">Dashboard</h1>
+                      <p className="text-base text-muted-foreground mt-2">
+                        Manage client documents and track uploads
+                      </p>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date().toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <StatsCard
-                    title="Clients with Documents"
+                    title="Active Clients"
                     value={clients.filter(c => c.documentCount > 0).length}
                     icon={Users}
-                    description="Active clients"
+                    description="Clients with documents"
                   />
                   <StatsCard
-                    title="Documents"
+                    title="Total Documents"
                     value={documents.length}
                     icon={FileText}
-                    description="Total documents"
+                    description="All uploaded files"
                   />
                   <StatsCard
                     title="This Month"
@@ -265,9 +277,9 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-xl font-semibold mb-4">Documents by Client</h2>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold tracking-tight">Documents by Client</h2>
                   </div>
 
                   {loading ? (
@@ -288,10 +300,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             )}
 
             {activeView === "upload" && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold" data-testid="text-page-title">Upload Documents</h1>
-                  <p className="text-muted-foreground mt-1">
+              <div className="space-y-8 max-w-6xl mx-auto">
+                <div className="space-y-3">
+                  <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">Upload Documents</h1>
+                  <p className="text-base text-muted-foreground">
                     Upload documents for clients - single or bulk upload
                   </p>
                 </div>
@@ -331,10 +343,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             )}
 
             {activeView === "clients" && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold" data-testid="text-page-title">All Clients</h1>
-                  <p className="text-muted-foreground mt-1">
+              <div className="space-y-8 max-w-7xl mx-auto">
+                <div className="space-y-3">
+                  <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">All Clients</h1>
+                  <p className="text-base text-muted-foreground">
                     View and manage all client accounts
                   </p>
                 </div>
@@ -343,10 +355,10 @@ export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) 
             )}
 
             {activeView === "settings" && (
-              <div className="space-y-6">
-                <div>
-                  <h1 className="text-3xl font-bold" data-testid="text-page-title">Settings</h1>
-                  <p className="text-muted-foreground mt-1">
+              <div className="space-y-8 max-w-3xl mx-auto">
+                <div className="space-y-3">
+                  <h1 className="text-4xl font-bold tracking-tight" data-testid="text-page-title">Settings</h1>
+                  <p className="text-base text-muted-foreground">
                     Configure your account and preferences
                   </p>
                 </div>
